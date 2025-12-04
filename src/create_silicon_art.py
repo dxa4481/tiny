@@ -15,8 +15,8 @@ Usage:
 
 Output files are created in the gds/ directory.
 
-IMPORTANT: Pin positions and die size MUST match the TinyTapeout TT10 template EXACTLY.
-           These values come from: tt-support-tools/def/tt_block_1x1_pg.def
+IMPORTANT: Pin positions and die size MUST match the TinyTapeout IHP template EXACTLY.
+           These values come from: tt-support-tools/tech/ihp-sg13g2/def/tt_block_1x1_pgvdd.def
 """
 
 import sys
@@ -29,105 +29,106 @@ except ImportError:
     GDSTK_AVAILABLE = False
 
 # =============================================================================
-# TinyTapeout TT10 1x1 Tile Specifications
-# These values are EXACT and come from the official TT10 template DEF file:
-# https://github.com/TinyTapeout/tt-support-tools/blob/tt10/def/tt_block_1x1_pg.def
+# TinyTapeout IHP-SG13G2 1x1 Tile Specifications
+# These values are EXACT and come from the official IHP template DEF file:
+# https://github.com/TinyTapeout/tt-support-tools/blob/main/tech/ihp-sg13g2/def/tt_block_1x1_pgvdd.def
 # =============================================================================
 
 # Die dimensions in micrometers (from DIEAREA in DEF)
-# DIEAREA ( 0 0 ) ( 161000 111520 ) → 161.0 x 111.52 µm
-DIE_WIDTH_UM = 161.0
-DIE_HEIGHT_UM = 111.52
+# DIEAREA ( 0 0 ) ( 202080 154980 ) → 202.08 x 154.98 µm
+DIE_WIDTH_UM = 202.08
+DIE_HEIGHT_UM = 154.98
 
 # Pin dimensions from DEF: ( -150 -500 ) ( 150 500 ) in nm = 0.3µm x 1.0µm
 PIN_WIDTH = 0.3
 PIN_HEIGHT = 1.0
 
-# Signal pin Y center: PLACED at y=111020nm = 111.02µm
-# With pin height 1.0µm, center is at 111.02µm, top edge at 111.52µm (= die top)
-PIN_Y_CENTER = 111.02
+# Signal pin Y center: PLACED at y=154480nm = 154.48µm
+# With pin height 1.0µm, center is at 154.48µm, top edge at 154.98µm (= die top)
+PIN_Y_CENTER = 154.48
 
-# GDS Layers for Sky130
-PIN_LAYER = 71
-PIN_DATATYPE = 16  # met4.pin
+# GDS Layers for IHP-SG13G2
+# Using Metal1 for artwork (layer 8)
+PIN_LAYER = 36        # Metal4.drawing
+PIN_DATATYPE = 0
 
-# Text layer (met1.drawing - most visible under microscope)
-TEXT_LAYER = 68  
-TEXT_DATATYPE = 20
+# Text layer (Metal1.drawing - most visible under microscope)
+TEXT_LAYER = 8  
+TEXT_DATATYPE = 0
 
 # Boundary/PR boundary layers
-BOUND_LAYER = 235
-BOUND_DATATYPE = 4
+BOUND_LAYER = 63      # prBndry
+BOUND_DATATYPE = 0
 
-# Label layer for pin names (met4.label)
-LABEL_LAYER = 71
-LABEL_DATATYPE = 5
+# Label layer for pin names
+LABEL_LAYER = 36      # Metal4
+LABEL_DATATYPE = 25   # label
 
 # Top module name
 TOP_MODULE = "tt_um_silicon_art"
 
 # =============================================================================
-# Pin Definitions - EXACT values from TT10 template DEF
-# All coordinates in micrometers
+# Pin Definitions - EXACT values from IHP template DEF
+# All coordinates in micrometers (converted from nanometers in DEF)
 # =============================================================================
 
 # Signal pins: (name, direction, x_center_um)
-# These are the EXACT positions from the TinyTapeout TT10 template DEF
+# These are the EXACT positions from the TinyTapeout IHP template DEF
 SIGNAL_PINS = [
     # Control signals
-    ("clk", "INPUT", 143.980),
-    ("ena", "INPUT", 146.740),
-    ("rst_n", "INPUT", 141.220),
+    ("clk", "INPUT", 187.20),
+    ("ena", "INPUT", 191.04),
+    ("rst_n", "INPUT", 183.36),
     
     # Input bus ui_in[7:0]
-    ("ui_in[0]", "INPUT", 138.460),
-    ("ui_in[1]", "INPUT", 135.700),
-    ("ui_in[2]", "INPUT", 132.940),
-    ("ui_in[3]", "INPUT", 130.180),
-    ("ui_in[4]", "INPUT", 127.420),
-    ("ui_in[5]", "INPUT", 124.660),
-    ("ui_in[6]", "INPUT", 121.900),
-    ("ui_in[7]", "INPUT", 119.140),
+    ("ui_in[0]", "INPUT", 179.52),
+    ("ui_in[1]", "INPUT", 175.68),
+    ("ui_in[2]", "INPUT", 171.84),
+    ("ui_in[3]", "INPUT", 168.00),
+    ("ui_in[4]", "INPUT", 164.16),
+    ("ui_in[5]", "INPUT", 160.32),
+    ("ui_in[6]", "INPUT", 156.48),
+    ("ui_in[7]", "INPUT", 152.64),
     
     # Bidirectional input bus uio_in[7:0]
-    ("uio_in[0]", "INPUT", 116.380),
-    ("uio_in[1]", "INPUT", 113.620),
-    ("uio_in[2]", "INPUT", 110.860),
-    ("uio_in[3]", "INPUT", 108.100),
-    ("uio_in[4]", "INPUT", 105.340),
-    ("uio_in[5]", "INPUT", 102.580),
-    ("uio_in[6]", "INPUT", 99.820),
-    ("uio_in[7]", "INPUT", 97.060),
+    ("uio_in[0]", "INPUT", 148.80),
+    ("uio_in[1]", "INPUT", 144.96),
+    ("uio_in[2]", "INPUT", 141.12),
+    ("uio_in[3]", "INPUT", 137.28),
+    ("uio_in[4]", "INPUT", 133.44),
+    ("uio_in[5]", "INPUT", 129.60),
+    ("uio_in[6]", "INPUT", 125.76),
+    ("uio_in[7]", "INPUT", 121.92),
     
     # Output enable bus uio_oe[7:0]
-    ("uio_oe[0]", "OUTPUT", 50.140),
-    ("uio_oe[1]", "OUTPUT", 47.380),
-    ("uio_oe[2]", "OUTPUT", 44.620),
-    ("uio_oe[3]", "OUTPUT", 41.860),
-    ("uio_oe[4]", "OUTPUT", 39.100),
-    ("uio_oe[5]", "OUTPUT", 36.340),
-    ("uio_oe[6]", "OUTPUT", 33.580),
-    ("uio_oe[7]", "OUTPUT", 30.820),
+    ("uio_oe[0]", "OUTPUT", 56.64),
+    ("uio_oe[1]", "OUTPUT", 52.80),
+    ("uio_oe[2]", "OUTPUT", 48.96),
+    ("uio_oe[3]", "OUTPUT", 45.12),
+    ("uio_oe[4]", "OUTPUT", 41.28),
+    ("uio_oe[5]", "OUTPUT", 37.44),
+    ("uio_oe[6]", "OUTPUT", 33.60),
+    ("uio_oe[7]", "OUTPUT", 29.76),
     
     # Bidirectional output bus uio_out[7:0]
-    ("uio_out[0]", "OUTPUT", 72.220),
-    ("uio_out[1]", "OUTPUT", 69.460),
-    ("uio_out[2]", "OUTPUT", 66.700),
-    ("uio_out[3]", "OUTPUT", 63.940),
-    ("uio_out[4]", "OUTPUT", 61.180),
-    ("uio_out[5]", "OUTPUT", 58.420),
-    ("uio_out[6]", "OUTPUT", 55.660),
-    ("uio_out[7]", "OUTPUT", 52.900),
+    ("uio_out[0]", "OUTPUT", 87.36),
+    ("uio_out[1]", "OUTPUT", 83.52),
+    ("uio_out[2]", "OUTPUT", 79.68),
+    ("uio_out[3]", "OUTPUT", 75.84),
+    ("uio_out[4]", "OUTPUT", 72.00),
+    ("uio_out[5]", "OUTPUT", 68.16),
+    ("uio_out[6]", "OUTPUT", 64.32),
+    ("uio_out[7]", "OUTPUT", 60.48),
     
     # Output bus uo_out[7:0]
-    ("uo_out[0]", "OUTPUT", 94.300),
-    ("uo_out[1]", "OUTPUT", 91.540),
-    ("uo_out[2]", "OUTPUT", 88.780),
-    ("uo_out[3]", "OUTPUT", 86.020),
-    ("uo_out[4]", "OUTPUT", 83.260),
-    ("uo_out[5]", "OUTPUT", 80.500),
-    ("uo_out[6]", "OUTPUT", 77.740),
-    ("uo_out[7]", "OUTPUT", 74.980),
+    ("uo_out[0]", "OUTPUT", 118.08),
+    ("uo_out[1]", "OUTPUT", 114.24),
+    ("uo_out[2]", "OUTPUT", 110.40),
+    ("uo_out[3]", "OUTPUT", 106.56),
+    ("uo_out[4]", "OUTPUT", 102.72),
+    ("uo_out[5]", "OUTPUT", 98.88),
+    ("uo_out[6]", "OUTPUT", 95.04),
+    ("uo_out[7]", "OUTPUT", 91.20),
 ]
 
 # Power pins: width must be >= 1.2µm, must be within 10µm of top and bottom edges
@@ -175,7 +176,7 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
     cell.add(boundary)
     
     # -------------------------------------------------------------------------
-    # 2. Add signal pin shapes on met4.pin layer
+    # 2. Add signal pin shapes on Metal4 layer
     # -------------------------------------------------------------------------
     for pin_name, direction, x_pos in SIGNAL_PINS:
         # Pin rectangle centered at (x_pos, PIN_Y_CENTER)
@@ -197,7 +198,7 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 3. Add power pins on met4.pin layer
+    # 3. Add power pins on Metal4 layer
     # -------------------------------------------------------------------------
     for pin_name, use_type, x_pos in POWER_PINS:
         power_rect = gdstk.rectangle(
@@ -217,7 +218,7 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 4. Add text art on met1.drawing layer
+    # 4. Add text art on Metal1.drawing layer
     # -------------------------------------------------------------------------
     
     # Calculate text area (leave margins)
@@ -331,9 +332,9 @@ def generate_lef():
     Generate LEF file for the macro.
     
     CRITICAL: 
-    - Die size must match template DEF exactly (161.0 x 111.52)
+    - Die size must match template DEF exactly (202.08 x 154.98)
     - Pin positions must match template DEF exactly
-    - Layer name must be "met4" (lowercase) not "Metal4"
+    - Layer name must be "Metal4" (capital M) for IHP PDK
     """
     lef = f"""VERSION 5.8 ;
 BUSBITCHARS "[]" ;
@@ -347,7 +348,7 @@ MACRO {TOP_MODULE}
   SYMMETRY X Y ;
 """
     
-    # Power pins - must use "met4" (lowercase)
+    # Power pins - must use "Metal4" (capital M) for IHP
     for pin_name, use_type, x_pos in POWER_PINS:
         llx = x_pos - POWER_PIN_WIDTH/2
         urx = x_pos + POWER_PIN_WIDTH/2
@@ -356,13 +357,13 @@ MACRO {TOP_MODULE}
     DIRECTION INOUT ;
     USE {use_type} ;
     PORT
-      LAYER met4 ;
+      LAYER Metal4 ;
         RECT {llx:.3f} {POWER_PIN_Y_START:.3f} {urx:.3f} {POWER_PIN_Y_END:.3f} ;
     END
   END {pin_name}
 """
     
-    # Signal pins - must use "met4" (lowercase) and exact positions
+    # Signal pins - must use "Metal4" (capital M) and exact positions
     for pin_name, direction, x_pos in SIGNAL_PINS:
         llx = x_pos - PIN_WIDTH/2
         lly = PIN_Y_CENTER - PIN_HEIGHT/2
@@ -374,7 +375,7 @@ MACRO {TOP_MODULE}
     DIRECTION {direction} ;
     USE SIGNAL ;
     PORT
-      LAYER met4 ;
+      LAYER Metal4 ;
         RECT {llx:.3f} {lly:.3f} {urx:.3f} {ury:.3f} ;
     END
   END {pin_name}
@@ -438,7 +439,7 @@ def create_svg_preview(lib, output_path, width=800, height=600):
     padding = 20
     scale = min((width - 2*padding) / cell_width, (height - 2*padding) / cell_height)
     
-    colors = {68: '#4169E1', 71: '#FF6347', 235: '#CCCCCC'}
+    colors = {8: '#4169E1', 36: '#FF6347', 63: '#CCCCCC'}
     
     svg_parts = [
         f'<?xml version="1.0" encoding="UTF-8"?>',
@@ -450,7 +451,7 @@ def create_svg_preview(lib, output_path, width=800, height=600):
     for poly in cell.polygons:
         layer = poly.layer
         color = colors.get(layer, '#888888')
-        opacity = 0.3 if layer == 235 else 0.9
+        opacity = 0.3 if layer == 63 else 0.9
         points_str = ' '.join(f'{p[0]},{p[1]}' for p in poly.points)
         svg_parts.append(
             f'    <polygon points="{points_str}" fill="{color}" '
@@ -485,7 +486,7 @@ def main():
     text = args.text.replace('\\n', '\n')
     
     print(f"Creating silicon art with text: {repr(text)}")
-    print(f"Die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm (TT10 1x1 tile)")
+    print(f"Die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm (IHP 1x1 tile)")
     print(f"Output directory: {args.output}")
     print()
     
