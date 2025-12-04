@@ -188,9 +188,13 @@ def validate_pin_positions(pins, die_width=None, die_height=None, tolerance=0.01
     errors = []
     warnings = []
     
-    # Calculate scale factors if die size differs from template
+    # Calculate scale factor for X (pin X positions scale with width)
     x_scale = die_width / DIE_WIDTH_UM if die_width else 1.0
-    y_scale = die_height / DIE_HEIGHT_UM if die_height else 1.0
+    
+    # For signal pins, Y position is fixed at top edge of die (not scaled)
+    # Pin top edge aligns with die boundary
+    # exp_y_center = die_height - PIN_HEIGHT/2
+    exp_y_center = (die_height - PIN_HEIGHT / 2) if die_height else PIN_Y_CENTER
     
     # Check signal pins
     for pin_name, direction, expected_x in EXPECTED_SIGNAL_PINS:
@@ -203,9 +207,10 @@ def validate_pin_positions(pins, die_width=None, die_height=None, tolerance=0.01
         
         llx, lly, urx, ury = pin['rect']
         
-        # Calculate expected rectangle (scaled)
+        # Calculate expected rectangle
+        # X scales with die width, rounded to 0.05 µm grid
         exp_x_center = expected_x * x_scale
-        exp_y_center = PIN_Y_CENTER * y_scale
+        exp_x_center = round(exp_x_center / 0.05) * 0.05  # Round to TinyTapeout grid
         exp_llx = exp_x_center - PIN_WIDTH / 2
         exp_lly = exp_y_center - PIN_HEIGHT / 2
         exp_urx = exp_x_center + PIN_WIDTH / 2
