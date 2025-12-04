@@ -62,15 +62,21 @@ For silicon art, we:
 
 ### Tile Sizes
 
-TinyTapeout offers different tile sizes:
+TinyTapeout offers different tile sizes. Dimensions vary by PDK:
 
+**IHP-SG13G2 PDK:**
+| Size | Dimensions | Approximate Text Capacity |
+|------|------------|---------------------------|
+| 1x1  | 202 × 155 µm | ~25 characters |
+| 1x2  | 202 × 314 µm | ~60 characters |
+| 2x2  | 420 × 314 µm | ~120 characters |
+
+**Sky130 PDK:**
 | Size | Dimensions | Approximate Text Capacity |
 |------|------------|---------------------------|
 | 1x1  | 161 × 112 µm | ~20 characters |
-| 1x2  | 161 × 224 µm | ~50 characters |
-| 2x2  | 322 × 224 µm | ~100 characters |
-| 4x2  | 644 × 224 µm | ~200 characters |
-| 8x2  | 1288 × 224 µm | ~500+ characters |
+| 1x2  | 161 × 226 µm | ~50 characters |
+| 2x2  | 335 × 226 µm | ~100 characters |
 
 ## Quick Start
 
@@ -254,6 +260,54 @@ cell = gen.create_text_cell(text, font_size=8)
 gen.add_border(cell, border_width=3)
 gen.save("genesis.gds")
 ```
+
+## Troubleshooting: Die Area Mismatch Error
+
+### The Error
+```
+Die area mismatch: expected 202.08x154.98 µm (1x1 tiles), got 161x111.52 µm
+```
+
+### Root Cause
+This project was originally written for **Sky130 PDK** but TinyTapeout shuttles may use **IHP-SG13G2 PDK** which has completely different tile dimensions:
+
+| PDK | 1x1 Tile Size | Pin Y Position | Layer Name |
+|-----|---------------|----------------|------------|
+| Sky130 | 161.0 × 111.52 µm | 111.02 µm | `met4` (lowercase) |
+| **IHP-SG13G2** | **202.08 × 154.98 µm** | **154.48 µm** | **`Metal4`** (capital M) |
+
+### What Was Changed (Dec 2024)
+To fix for IHP PDK:
+
+1. **Die dimensions**: Updated from 161×111.52 to **202.08×154.98 µm**
+
+2. **PIN_Y_CENTER**: Changed from 111.02 to **154.48 µm** (pins at top edge)
+
+3. **All 43 signal pin X positions**: Completely different coordinates extracted from:
+   `tt-support-tools/tech/ihp-sg13g2/def/tt_block_1x1_pgvdd.def`
+
+4. **LEF layer name**: Changed from `met4` to `Metal4` (IHP uses capital M)
+
+5. **GDS layer numbers**: Updated to IHP layer scheme
+
+### How to Verify Your PDK
+Check which PDK your TinyTapeout shuttle uses:
+- Look at the error message dimensions
+- Check `tt-support-tools/tech/<pdk>/tile_sizes.yaml` for your shuttle
+
+### Key Files Modified
+- `src/create_silicon_art.py` - Main generator with all dimensions/pins
+- `src/validate_lef.py` - Local validator 
+- `test/test_validate_lef.py` - Tests
+
+### Reference: IHP Pin Positions
+Signal pins are at Y=154.48µm (center). X positions from DEF:
+- clk: 187.20, ena: 191.04, rst_n: 183.36
+- ui_in[0-7]: 179.52 → 152.64 (step -3.84)
+- uio_in[0-7]: 148.80 → 121.92
+- uo_out[0-7]: 118.08 → 91.20
+- uio_out[0-7]: 87.36 → 60.48
+- uio_oe[0-7]: 56.64 → 29.76
 
 ## License
 
