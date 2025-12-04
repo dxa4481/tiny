@@ -466,11 +466,12 @@ def create_svg_preview(lib, output_path, width=800, height=600):
     scale = min((width - 2*padding) / cell_width,
                 (height - 2*padding) / cell_height)
     
-    # Layer colors matching the EXACT colors from "pixel_pig (4).png"
+    # Layer colors matching the EXACT RGB values from "pixel_pig (4).png"
+    # Using the actual hex equivalents of the extracted colors
     colors = {
         68: '#DD8E88',  # met1 - Light pink body - RGB(221, 142, 136)
         69: '#995A56',  # met2 - Dark pink details - RGB(153, 90, 86)
-        66: '#C86D66',  # poly - Medium pink snout - RGB(200, 109, 102)
+        66: '#C86D66',  # poly - Medium pink NOSE - RGB(200, 109, 102)
         70: '#AE8C57',  # met3 - Golden key - RGB(174, 140, 87)
         67: '#1E1E1E',  # li1 - Black eyes - RGB(30, 30, 30)
         71: '#666666',  # met4 - Gray (pins)
