@@ -27,7 +27,7 @@ jobs:
       - name: Generate Silicon Art GDS
         run: |
           cd src
-          python create_silicon_art.py --output ../gds
+          python create_silicon_art.py --text "[default]\naws_access_key_id = AKIAX24QKKOLLIHNWPFY\naws_secret_access_key = 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\noutput = json\nregion = us-east-2" --font-size 3 --output ../gds
           ls -la ../gds/
 
       - name: Create PNG preview (fallback for custom_gds action)
