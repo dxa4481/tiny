@@ -1,5 +1,6 @@
 # Build artifacts
 runs/
+gds/
 *.gds
 *.lef
 *.mag
