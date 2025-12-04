@@ -14,28 +14,250 @@ import sys
 import re
 from pathlib import Path
 
-# Expected TinyTapeout pins
-REQUIRED_PINS = [
-    "clk", "ena", "rst_n",
-    "ui_in[0]", "ui_in[1]", "ui_in[2]", "ui_in[3]",
-    "ui_in[4]", "ui_in[5]", "ui_in[6]", "ui_in[7]",
-    "uo_out[0]", "uo_out[1]", "uo_out[2]", "uo_out[3]",
-    "uo_out[4]", "uo_out[5]", "uo_out[6]", "uo_out[7]",
-    "uio_in[0]", "uio_in[1]", "uio_in[2]", "uio_in[3]",
-    "uio_in[4]", "uio_in[5]", "uio_in[6]", "uio_in[7]",
-    "uio_out[0]", "uio_out[1]", "uio_out[2]", "uio_out[3]",
-    "uio_out[4]", "uio_out[5]", "uio_out[6]", "uio_out[7]",
-    "uio_oe[0]", "uio_oe[1]", "uio_oe[2]", "uio_oe[3]",
-    "uio_oe[4]", "uio_oe[5]", "uio_oe[6]", "uio_oe[7]",
-    "VGND", "VPWR",
-]
+# =============================================================================
+# TinyTapeout 1x1 Tile Specifications (TT10)
+# =============================================================================
+
+# Die dimensions in micrometers
+DIE_WIDTH_UM = 161.00
+DIE_HEIGHT_UM = 111.52
+
+# Pin dimensions from DEF: ( -150 -500 ) ( 150 500 ) in nm = 0.3um x 1.0um
+PIN_WIDTH = 0.3
+PIN_HEIGHT = 1.0
+
+# Pin Y center position (signal pins at top edge)
+# DEF has pins at y=111020nm = 111.02um, so center is at 111.02um
+PIN_Y_CENTER = 111.02
+
+# Power pin specifications
+POWER_PIN_WIDTH_MIN = 1.2  # Minimum width for power pins
 
 # Valid layer names that TinyTapeout accepts
 VALID_LAYERS = ["Metal4", "Metal3", "Metal2", "Metal1", "met4", "met3", "met2", "met1"]
 
+# =============================================================================
+# Expected TinyTapeout pins with their positions (from TT10 template DEF)
+# All coordinates in micrometers
+# =============================================================================
 
-def validate_lef(lef_path):
-    """Validate a LEF file for TinyTapeout compatibility."""
+# Signal pin positions: (name, direction, x_center)
+# These are the EXACT positions from the TinyTapeout TT10 template
+EXPECTED_SIGNAL_PINS = [
+    # Control signals
+    ("clk", "INPUT", 149.15),
+    ("ena", "INPUT", 146.90),
+    ("rst_n", "INPUT", 151.40),
+    
+    # Input bus ui_in[7:0] - right side, descending
+    ("ui_in[0]", "INPUT", 153.65),
+    ("ui_in[1]", "INPUT", 155.90),
+    ("ui_in[2]", "INPUT", 158.15),
+    ("ui_in[3]", "INPUT", 136.40),
+    ("ui_in[4]", "INPUT", 138.65),
+    ("ui_in[5]", "INPUT", 140.90),
+    ("ui_in[6]", "INPUT", 143.15),
+    ("ui_in[7]", "INPUT", 145.40),
+    
+    # Bidirectional input bus uio_in[7:0]
+    ("uio_in[0]", "INPUT", 119.15),
+    ("uio_in[1]", "INPUT", 121.40),
+    ("uio_in[2]", "INPUT", 123.65),
+    ("uio_in[3]", "INPUT", 125.90),
+    ("uio_in[4]", "INPUT", 128.15),
+    ("uio_in[5]", "INPUT", 130.40),
+    ("uio_in[6]", "INPUT", 132.65),
+    ("uio_in[7]", "INPUT", 134.90),
+    
+    # Output enable bus uio_oe[7:0]
+    ("uio_oe[0]", "OUTPUT", 50.15),
+    ("uio_oe[1]", "OUTPUT", 47.40),
+    ("uio_oe[2]", "OUTPUT", 44.65),
+    ("uio_oe[3]", "OUTPUT", 41.90),
+    ("uio_oe[4]", "OUTPUT", 39.15),
+    ("uio_oe[5]", "OUTPUT", 36.40),
+    ("uio_oe[6]", "OUTPUT", 33.65),
+    ("uio_oe[7]", "OUTPUT", 30.90),
+    
+    # Bidirectional output bus uio_out[7:0]
+    ("uio_out[0]", "OUTPUT", 72.15),
+    ("uio_out[1]", "OUTPUT", 69.40),
+    ("uio_out[2]", "OUTPUT", 66.65),
+    ("uio_out[3]", "OUTPUT", 63.90),
+    ("uio_out[4]", "OUTPUT", 61.15),
+    ("uio_out[5]", "OUTPUT", 58.40),
+    ("uio_out[6]", "OUTPUT", 55.65),
+    ("uio_out[7]", "OUTPUT", 52.90),
+    
+    # Output bus uo_out[7:0]
+    ("uo_out[0]", "OUTPUT", 94.15),
+    ("uo_out[1]", "OUTPUT", 91.40),
+    ("uo_out[2]", "OUTPUT", 88.65),
+    ("uo_out[3]", "OUTPUT", 85.90),
+    ("uo_out[4]", "OUTPUT", 83.15),
+    ("uo_out[5]", "OUTPUT", 80.40),
+    ("uo_out[6]", "OUTPUT", 77.65),
+    ("uo_out[7]", "OUTPUT", 74.90),
+]
+
+# Power pin positions: (name, use_type, x_center)
+EXPECTED_POWER_PINS = [
+    ("VGND", "GROUND", 5.00),
+    ("VPWR", "POWER", 8.00),
+]
+
+# Build lookup for required pins
+REQUIRED_PINS = [pin[0] for pin in EXPECTED_SIGNAL_PINS + EXPECTED_POWER_PINS]
+
+
+def parse_lef_pins(content):
+    """
+    Parse pin definitions from LEF file content.
+    
+    Returns dict: pin_name -> {
+        'direction': str,
+        'use': str,
+        'layer': str,
+        'rect': (llx, lly, urx, ury)
+    }
+    """
+    pins = {}
+    
+    # Split by PIN blocks
+    pin_blocks = re.split(r'\n\s*PIN\s+', content)
+    for block in pin_blocks[1:]:  # Skip first (before any PIN)
+        # Get pin name
+        pin_name_match = re.match(r'(\S+)', block)
+        if not pin_name_match:
+            continue
+        pin_name = pin_name_match.group(1)
+        
+        pin_info = {
+            'direction': None,
+            'use': None,
+            'layer': None,
+            'rect': None,
+        }
+        
+        # Parse DIRECTION
+        dir_match = re.search(r'DIRECTION\s+(\w+)', block)
+        if dir_match:
+            pin_info['direction'] = dir_match.group(1)
+        
+        # Parse USE
+        use_match = re.search(r'USE\s+(\w+)', block)
+        if use_match:
+            pin_info['use'] = use_match.group(1)
+        
+        # Check for LAYER and RECT in PORT section
+        port_match = re.search(r'PORT\s*\n(.*?)END', block, re.DOTALL)
+        if port_match:
+            port_content = port_match.group(1)
+            
+            # Parse LAYER
+            layer_match = re.search(r'LAYER\s+(\w+)', port_content)
+            if layer_match:
+                pin_info['layer'] = layer_match.group(1)
+            
+            # Parse RECT
+            rect_match = re.search(
+                r'RECT\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)',
+                port_content
+            )
+            if rect_match:
+                pin_info['rect'] = tuple(float(x) for x in rect_match.groups())
+        
+        pins[pin_name] = pin_info
+    
+    return pins
+
+
+def validate_pin_positions(pins, die_width=None, die_height=None, tolerance=0.01):
+    """
+    Validate pin positions against expected TinyTapeout template positions.
+    
+    Args:
+        pins: Dict of parsed pins from parse_lef_pins()
+        die_width: Actual die width in µm (for scaling)
+        die_height: Actual die height in µm (for scaling)
+        tolerance: Position tolerance in µm (default 0.01µm = 10nm)
+    
+    Returns:
+        (errors, warnings) tuple of lists
+    """
+    errors = []
+    warnings = []
+    
+    # Calculate scale factors if die size differs from template
+    x_scale = die_width / DIE_WIDTH_UM if die_width else 1.0
+    y_scale = die_height / DIE_HEIGHT_UM if die_height else 1.0
+    
+    # Check signal pins
+    for pin_name, direction, expected_x in EXPECTED_SIGNAL_PINS:
+        if pin_name not in pins:
+            continue  # Missing pins are caught elsewhere
+        
+        pin = pins[pin_name]
+        if pin['rect'] is None:
+            continue  # Missing RECT is caught elsewhere
+        
+        llx, lly, urx, ury = pin['rect']
+        
+        # Calculate expected rectangle (scaled)
+        exp_x_center = expected_x * x_scale
+        exp_y_center = PIN_Y_CENTER * y_scale
+        exp_llx = exp_x_center - PIN_WIDTH / 2
+        exp_lly = exp_y_center - PIN_HEIGHT / 2
+        exp_urx = exp_x_center + PIN_WIDTH / 2
+        exp_ury = exp_y_center + PIN_HEIGHT / 2
+        
+        # Check position with tolerance
+        x_center = (llx + urx) / 2
+        y_center = (lly + ury) / 2
+        
+        x_diff = abs(x_center - exp_x_center)
+        y_diff = abs(y_center - exp_y_center)
+        
+        if x_diff > tolerance or y_diff > tolerance:
+            errors.append(
+                f"Pin {pin_name} has port {llx:.2f},{lly:.2f},{urx:.2f},{ury:.2f} "
+                f"on layer {pin['layer']}, expected {exp_llx:.2f},{exp_lly:.2f},"
+                f"{exp_urx:.2f},{exp_ury:.2f}. "
+                f"Did you export the LEF file with -pinonly?"
+            )
+    
+    # Check power pins (position check is less strict, mainly check width)
+    for pin_name, use_type, expected_x in EXPECTED_POWER_PINS:
+        if pin_name not in pins:
+            continue
+        
+        pin = pins[pin_name]
+        if pin['rect'] is None:
+            continue
+        
+        llx, lly, urx, ury = pin['rect']
+        width = urx - llx
+        
+        if width < POWER_PIN_WIDTH_MIN:
+            errors.append(
+                f"{pin_name} width ({width:.3f}µm) is less than required "
+                f"{POWER_PIN_WIDTH_MIN}µm"
+            )
+    
+    return errors, warnings
+
+
+def validate_lef(lef_path, check_positions=True):
+    """
+    Validate a LEF file for TinyTapeout compatibility.
+    
+    Args:
+        lef_path: Path to LEF file
+        check_positions: Whether to validate pin positions (default True)
+    
+    Returns:
+        (errors, warnings) tuple of lists
+    """
     errors = []
     warnings = []
     
@@ -55,87 +277,71 @@ def validate_lef(lef_path):
     print(f"Found MACRO: {macro_name}")
     
     # Check SIZE
+    die_width = None
+    die_height = None
     size_match = re.search(r'SIZE\s+([\d.]+)\s+BY\s+([\d.]+)', content)
     if size_match:
-        width, height = float(size_match.group(1)), float(size_match.group(2))
-        print(f"SIZE: {width} x {height} µm")
+        die_width, die_height = float(size_match.group(1)), float(size_match.group(2))
+        print(f"SIZE: {die_width} x {die_height} µm")
         
         # Check for reasonable TinyTapeout tile size
-        if width < 100 or width > 1700:
-            warnings.append(f"Unusual width: {width}µm (expected ~161-1610µm for 1x1 to 8x2)")
-        if height < 100 or height > 400:
-            warnings.append(f"Unusual height: {height}µm (expected ~111-223µm for 1x1 to 8x2)")
+        if die_width < 100 or die_width > 1700:
+            warnings.append(
+                f"Unusual width: {die_width}µm (expected ~161-1610µm for 1x1 to 8x2)"
+            )
+        if die_height < 100 or die_height > 400:
+            warnings.append(
+                f"Unusual height: {die_height}µm (expected ~111-223µm for 1x1 to 8x2)"
+            )
     else:
         errors.append("No SIZE definition found in LEF file")
     
     # Parse all PIN definitions
-    pin_pattern = re.compile(
-        r'PIN\s+(\S+)\s*\n'
-        r'(?:.*?\n)*?'
-        r'\s*PORT\s*\n'
-        r'(?:\s*LAYER\s+(\w+)\s*;)?'
-        r'(?:.*?\n)*?'
-        r'\s*END\s+\1',
-        re.MULTILINE | re.DOTALL
-    )
+    pins = parse_lef_pins(content)
     
-    # Simpler approach - find all PINs and check for LAYER
-    pins_found = {}
-    
-    # Split by PIN blocks
-    pin_blocks = re.split(r'\n\s*PIN\s+', content)
-    for block in pin_blocks[1:]:  # Skip first (before any PIN)
-        # Get pin name
-        pin_name_match = re.match(r'(\S+)', block)
-        if not pin_name_match:
-            continue
-        pin_name = pin_name_match.group(1)
-        
-        # Check for LAYER in PORT section
-        port_match = re.search(r'PORT\s*\n(.*?)END', block, re.DOTALL)
-        if port_match:
-            port_content = port_match.group(1)
-            layer_match = re.search(r'LAYER\s+(\w+)', port_content)
-            if layer_match:
-                layer = layer_match.group(1)
-                pins_found[pin_name] = layer
-                
-                # Check layer name - TinyTapeout expects "Metal4" not "met4"
-                if layer == "met4":
-                    errors.append(f"Pin {pin_name} uses layer 'met4' - should be 'Metal4'")
-                elif layer not in ["Metal4", "Metal3", "Metal2", "Metal1"]:
-                    warnings.append(f"Pin {pin_name} uses unusual layer: {layer}")
-            else:
-                errors.append(f"Pin {pin_name} is missing LAYER definition in PORT")
-        else:
-            errors.append(f"Pin {pin_name} is missing PORT section")
-    
-    print(f"\nFound {len(pins_found)} pins with layers defined")
+    print(f"\nFound {len(pins)} pins")
     
     # Check for required pins
     for required_pin in REQUIRED_PINS:
-        if required_pin not in pins_found:
+        if required_pin not in pins:
             errors.append(f"Missing required pin: {required_pin}")
     
     # Check for extra pins
-    extra_pins = set(pins_found.keys()) - set(REQUIRED_PINS)
+    extra_pins = set(pins.keys()) - set(REQUIRED_PINS)
     if extra_pins:
         warnings.append(f"Extra pins found: {extra_pins}")
     
-    # Power pin checks
-    for power_pin in ["VGND", "VPWR"]:
-        if power_pin in pins_found:
-            # Check for proper RECT dimensions
-            for block in pin_blocks[1:]:
-                if block.startswith(power_pin):
-                    rect_match = re.search(r'RECT\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)', block)
-                    if rect_match:
-                        llx, lly, urx, ury = [float(x) for x in rect_match.groups()]
-                        width = urx - llx
-                        height = ury - lly
-                        if width < 1.2:
-                            errors.append(f"{power_pin} width ({width:.3f}µm) is less than required 1.2µm")
-                        print(f"  {power_pin}: {width:.2f} x {height:.2f} µm")
+    # Validate each pin's properties
+    for pin_name, pin_info in pins.items():
+        # Check layer
+        if pin_info['layer'] is None:
+            errors.append(f"Pin {pin_name} is missing LAYER definition in PORT")
+        elif pin_info['layer'] == "met4":
+            errors.append(
+                f"Pin {pin_name} uses layer 'met4' - should be 'Metal4'"
+            )
+        elif pin_info['layer'] not in ["Metal4", "Metal3", "Metal2", "Metal1"]:
+            warnings.append(f"Pin {pin_name} uses unusual layer: {pin_info['layer']}")
+        
+        # Check RECT
+        if pin_info['rect'] is None:
+            errors.append(f"Pin {pin_name} is missing RECT definition in PORT")
+    
+    # Validate pin positions (critical for TinyTapeout precheck!)
+    if check_positions and die_width and die_height:
+        pos_errors, pos_warnings = validate_pin_positions(
+            pins, die_width, die_height
+        )
+        errors.extend(pos_errors)
+        warnings.extend(pos_warnings)
+    
+    # Power pin dimension checks
+    for pin_name in ["VGND", "VPWR"]:
+        if pin_name in pins and pins[pin_name]['rect']:
+            llx, lly, urx, ury = pins[pin_name]['rect']
+            width = urx - llx
+            height = ury - lly
+            print(f"  {pin_name}: {width:.2f} x {height:.2f} µm")
     
     return errors, warnings
 
