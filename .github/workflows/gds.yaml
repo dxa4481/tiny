@@ -18,14 +18,25 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install gdstk
-        run: pip install gdstk
+      - name: Install dependencies
+        run: |
+          pip install gdstk
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin
 
       - name: Generate Silicon Art GDS
         run: |
           cd src
           python create_silicon_art.py --text "HELLO\nWORLD" --output ../gds
           ls -la ../gds/
+
+      - name: Create PNG preview (fallback for custom_gds action)
+        run: |
+          # Create gds_render.png before custom_gds action runs
+          # The custom_gds action will upload this if its own PNG rendering fails
+          rsvg-convert -w 1024 -h 768 gds/preview.svg -o gds_render.png
+          echo "Created fallback gds_render.png:"
+          ls -la gds_render.png
 
       - name: Build with Custom GDS
         uses: TinyTapeout/tt-gds-action/custom_gds@tt10
