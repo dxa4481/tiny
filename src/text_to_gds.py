@@ -45,9 +45,9 @@ SKY130_LAYERS = {
 }
 
 # TinyTapeout tile dimensions in micrometers
-# 1x1 tile: 161.0 x 111.52 um (internal usable area slightly smaller)
-TILE_WIDTH_UM = 161.0
-TILE_HEIGHT_UM = 111.52
+# 1x1 tile: 202.08 x 154.98 um (internal usable area slightly smaller)
+TILE_WIDTH_UM = 202.08
+TILE_HEIGHT_UM = 154.98
 
 # Margins from edge (to avoid DRC issues and overlap with standard cells)
 MARGIN_UM = 10.0
