@@ -62,15 +62,21 @@ For silicon art, we:
 
 ### Tile Sizes
 
-TinyTapeout offers different tile sizes:
+TinyTapeout offers different tile sizes. Dimensions vary by PDK:
 
+**IHP-SG13G2 PDK:**
+| Size | Dimensions | Approximate Text Capacity |
+|------|------------|---------------------------|
+| 1x1  | 202 × 155 µm | ~25 characters |
+| 1x2  | 202 × 314 µm | ~60 characters |
+| 2x2  | 420 × 314 µm | ~120 characters |
+
+**Sky130 PDK:**
 | Size | Dimensions | Approximate Text Capacity |
 |------|------------|---------------------------|
 | 1x1  | 161 × 112 µm | ~20 characters |
-| 1x2  | 161 × 224 µm | ~50 characters |
-| 2x2  | 322 × 224 µm | ~100 characters |
-| 4x2  | 644 × 224 µm | ~200 characters |
-| 8x2  | 1288 × 224 µm | ~500+ characters |
+| 1x2  | 161 × 226 µm | ~50 characters |
+| 2x2  | 335 × 226 µm | ~100 characters |
 
 ## Quick Start
 

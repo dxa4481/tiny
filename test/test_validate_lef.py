@@ -39,7 +39,7 @@ MACRO tt_um_silicon_art
   SYMMETRY X Y ;
 """
     
-    # Add power pins with met4 (lowercase)
+    # Add power pins with Metal4 (capital M for IHP)
     power_width = 1.5
     for pin_name, use_type in EXPECTED_POWER_PINS:
         x_pos = 5.0 if pin_name == "VGND" else 8.0
@@ -48,13 +48,13 @@ MACRO tt_um_silicon_art
     DIRECTION INOUT ;
     USE {use_type} ;
     PORT
-      LAYER met4 ;
-        RECT {x_pos - power_width/2:.3f} 5.000 {x_pos + power_width/2:.3f} 106.520 ;
+      LAYER Metal4 ;
+        RECT {x_pos - power_width/2:.3f} 5.000 {x_pos + power_width/2:.3f} 149.980 ;
     END
   END {pin_name}
 """
     
-    # Add signal pins at correct positions with met4 (lowercase)
+    # Add signal pins at correct positions with Metal4 (capital M for IHP)
     for pin_name, direction, x_pos in EXPECTED_SIGNAL_PINS:
         llx = x_pos - PIN_WIDTH / 2
         lly = PIN_Y_CENTER - PIN_HEIGHT / 2
@@ -65,7 +65,7 @@ MACRO tt_um_silicon_art
     DIRECTION {direction} ;
     USE SIGNAL ;
     PORT
-      LAYER met4 ;
+      LAYER Metal4 ;
         RECT {llx:.3f} {lly:.3f} {urx:.3f} {ury:.3f} ;
     END
   END {pin_name}
@@ -81,7 +81,7 @@ END LIBRARY
 
 @pytest.fixture
 def wrong_layer_lef_content():
-    """LEF with wrong layer name (Metal4 instead of met4)."""
+    """LEF with wrong layer name (met4 instead of Metal4 for IHP)."""
     return f"""VERSION 5.8 ;
 BUSBITCHARS "[]" ;
 DIVIDERCHAR "/" ;
@@ -94,8 +94,8 @@ MACRO tt_um_silicon_art
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
-      LAYER Metal4 ;
-        RECT 143.830 110.520 144.130 111.520 ;
+      LAYER met4 ;
+        RECT 187.050 153.980 187.350 154.980 ;
     END
   END clk
 
@@ -106,21 +106,21 @@ END LIBRARY
 
 @pytest.fixture
 def wrong_size_lef_content():
-    """LEF with wrong die size."""
+    """LEF with wrong die size (Sky130 size instead of IHP)."""
     return """VERSION 5.8 ;
 BUSBITCHARS "[]" ;
 DIVIDERCHAR "/" ;
 
 MACRO tt_um_silicon_art
   CLASS BLOCK ;
-  SIZE 202.080 BY 154.980 ;
+  SIZE 161.000 BY 111.520 ;
 
   PIN clk
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
-      LAYER met4 ;
-        RECT 143.830 110.520 144.130 111.520 ;
+      LAYER Metal4 ;
+        RECT 187.050 153.980 187.350 154.980 ;
     END
   END clk
 
@@ -136,16 +136,16 @@ class TestParseLefPins:
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
-      LAYER met4 ;
-        RECT 143.830 110.520 144.130 111.520 ;
+      LAYER Metal4 ;
+        RECT 187.050 153.980 187.350 154.980 ;
     END
   END clk
 """
         pins = parse_lef_pins(content)
         assert "clk" in pins
         assert pins["clk"]["direction"] == "INPUT"
-        assert pins["clk"]["layer"] == "met4"
-        assert pins["clk"]["rect"] == (143.830, 110.520, 144.130, 111.520)
+        assert pins["clk"]["layer"] == "Metal4"
+        assert pins["clk"]["rect"] == (187.050, 153.980, 187.350, 154.980)
 
     def test_parse_power_pin(self):
         content = """
@@ -153,15 +153,15 @@ class TestParseLefPins:
     DIRECTION INOUT ;
     USE GROUND ;
     PORT
-      LAYER met4 ;
-        RECT 4.25 5.00 5.75 106.52 ;
+      LAYER Metal4 ;
+        RECT 4.25 5.00 5.75 149.98 ;
     END
   END VGND
 """
         pins = parse_lef_pins(content)
         assert "VGND" in pins
         assert pins["VGND"]["use"] == "GROUND"
-        assert pins["VGND"]["layer"] == "met4"
+        assert pins["VGND"]["layer"] == "Metal4"
 
 
 class TestValidateLef:
@@ -177,7 +177,7 @@ class TestValidateLef:
             f.write(wrong_layer_lef_content)
             f.flush()
             errors, warnings = validate_lef(f.name)
-            layer_errors = [e for e in errors if "Metal4" in e and "met4" in e]
+            layer_errors = [e for e in errors if "met4" in e and "Metal4" in e]
             assert len(layer_errors) > 0, "Should detect wrong layer name"
 
     def test_wrong_size_detected(self, wrong_size_lef_content):

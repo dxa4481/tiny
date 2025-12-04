@@ -13,7 +13,7 @@ The design includes:
 4. Power pins (VPWR, VGND) for proper power grid connection
 5. A minimal Verilog stub that passes inputs through with an XOR pattern
 
-The text is centered in the 161.0 × 111.52 µm tile area (TinyTapeout TT10 1x1 tile). Pin positions are precisely calculated to match the TinyTapeout template DEF file.
+The text is centered in the 202.08 × 154.98 µm tile area (TinyTapeout IHP 1x1 tile). Pin positions are precisely calculated to match the TinyTapeout IHP template DEF file.
 
 ## How to test
 

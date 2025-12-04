@@ -15,83 +15,83 @@ import re
 from pathlib import Path
 
 # =============================================================================
-# TinyTapeout TT10 1x1 Tile Specifications
-# These values are EXACT from: tt-support-tools/def/tt_block_1x1_pg.def
+# TinyTapeout IHP-SG13G2 1x1 Tile Specifications
+# These values are EXACT from: tt-support-tools/tech/ihp-sg13g2/def/tt_block_1x1_pgvdd.def
 # =============================================================================
 
 # Die dimensions (from DIEAREA in DEF) - in micrometers
-DIE_WIDTH_UM = 161.0
-DIE_HEIGHT_UM = 111.52
+DIE_WIDTH_UM = 202.08
+DIE_HEIGHT_UM = 154.98
 
 # Pin dimensions: ( -150 -500 ) ( 150 500 ) in nm = 0.3µm x 1.0µm
 PIN_WIDTH = 0.3
 PIN_HEIGHT = 1.0
 
-# Signal pin Y center (PLACED at y=111020nm = 111.02µm)
-PIN_Y_CENTER = 111.02
+# Signal pin Y center (PLACED at y=154480nm = 154.48µm)
+PIN_Y_CENTER = 154.48
 
 # Power pin requirements
 POWER_PIN_WIDTH_MIN = 1.2  # Minimum width in µm
 
 # =============================================================================
-# EXACT pin positions from TT10 template DEF (in micrometers)
+# EXACT pin positions from IHP template DEF (in micrometers)
 # =============================================================================
 
 EXPECTED_SIGNAL_PINS = [
     # Control signals
-    ("clk", "INPUT", 143.980),
-    ("ena", "INPUT", 146.740),
-    ("rst_n", "INPUT", 141.220),
+    ("clk", "INPUT", 187.20),
+    ("ena", "INPUT", 191.04),
+    ("rst_n", "INPUT", 183.36),
     
     # Input bus ui_in[7:0]
-    ("ui_in[0]", "INPUT", 138.460),
-    ("ui_in[1]", "INPUT", 135.700),
-    ("ui_in[2]", "INPUT", 132.940),
-    ("ui_in[3]", "INPUT", 130.180),
-    ("ui_in[4]", "INPUT", 127.420),
-    ("ui_in[5]", "INPUT", 124.660),
-    ("ui_in[6]", "INPUT", 121.900),
-    ("ui_in[7]", "INPUT", 119.140),
+    ("ui_in[0]", "INPUT", 179.52),
+    ("ui_in[1]", "INPUT", 175.68),
+    ("ui_in[2]", "INPUT", 171.84),
+    ("ui_in[3]", "INPUT", 168.00),
+    ("ui_in[4]", "INPUT", 164.16),
+    ("ui_in[5]", "INPUT", 160.32),
+    ("ui_in[6]", "INPUT", 156.48),
+    ("ui_in[7]", "INPUT", 152.64),
     
     # Bidirectional input bus uio_in[7:0]
-    ("uio_in[0]", "INPUT", 116.380),
-    ("uio_in[1]", "INPUT", 113.620),
-    ("uio_in[2]", "INPUT", 110.860),
-    ("uio_in[3]", "INPUT", 108.100),
-    ("uio_in[4]", "INPUT", 105.340),
-    ("uio_in[5]", "INPUT", 102.580),
-    ("uio_in[6]", "INPUT", 99.820),
-    ("uio_in[7]", "INPUT", 97.060),
+    ("uio_in[0]", "INPUT", 148.80),
+    ("uio_in[1]", "INPUT", 144.96),
+    ("uio_in[2]", "INPUT", 141.12),
+    ("uio_in[3]", "INPUT", 137.28),
+    ("uio_in[4]", "INPUT", 133.44),
+    ("uio_in[5]", "INPUT", 129.60),
+    ("uio_in[6]", "INPUT", 125.76),
+    ("uio_in[7]", "INPUT", 121.92),
     
     # Output enable bus uio_oe[7:0]
-    ("uio_oe[0]", "OUTPUT", 50.140),
-    ("uio_oe[1]", "OUTPUT", 47.380),
-    ("uio_oe[2]", "OUTPUT", 44.620),
-    ("uio_oe[3]", "OUTPUT", 41.860),
-    ("uio_oe[4]", "OUTPUT", 39.100),
-    ("uio_oe[5]", "OUTPUT", 36.340),
-    ("uio_oe[6]", "OUTPUT", 33.580),
-    ("uio_oe[7]", "OUTPUT", 30.820),
+    ("uio_oe[0]", "OUTPUT", 56.64),
+    ("uio_oe[1]", "OUTPUT", 52.80),
+    ("uio_oe[2]", "OUTPUT", 48.96),
+    ("uio_oe[3]", "OUTPUT", 45.12),
+    ("uio_oe[4]", "OUTPUT", 41.28),
+    ("uio_oe[5]", "OUTPUT", 37.44),
+    ("uio_oe[6]", "OUTPUT", 33.60),
+    ("uio_oe[7]", "OUTPUT", 29.76),
     
     # Bidirectional output bus uio_out[7:0]
-    ("uio_out[0]", "OUTPUT", 72.220),
-    ("uio_out[1]", "OUTPUT", 69.460),
-    ("uio_out[2]", "OUTPUT", 66.700),
-    ("uio_out[3]", "OUTPUT", 63.940),
-    ("uio_out[4]", "OUTPUT", 61.180),
-    ("uio_out[5]", "OUTPUT", 58.420),
-    ("uio_out[6]", "OUTPUT", 55.660),
-    ("uio_out[7]", "OUTPUT", 52.900),
+    ("uio_out[0]", "OUTPUT", 87.36),
+    ("uio_out[1]", "OUTPUT", 83.52),
+    ("uio_out[2]", "OUTPUT", 79.68),
+    ("uio_out[3]", "OUTPUT", 75.84),
+    ("uio_out[4]", "OUTPUT", 72.00),
+    ("uio_out[5]", "OUTPUT", 68.16),
+    ("uio_out[6]", "OUTPUT", 64.32),
+    ("uio_out[7]", "OUTPUT", 60.48),
     
     # Output bus uo_out[7:0]
-    ("uo_out[0]", "OUTPUT", 94.300),
-    ("uo_out[1]", "OUTPUT", 91.540),
-    ("uo_out[2]", "OUTPUT", 88.780),
-    ("uo_out[3]", "OUTPUT", 86.020),
-    ("uo_out[4]", "OUTPUT", 83.260),
-    ("uo_out[5]", "OUTPUT", 80.500),
-    ("uo_out[6]", "OUTPUT", 77.740),
-    ("uo_out[7]", "OUTPUT", 74.980),
+    ("uo_out[0]", "OUTPUT", 118.08),
+    ("uo_out[1]", "OUTPUT", 114.24),
+    ("uo_out[2]", "OUTPUT", 110.40),
+    ("uo_out[3]", "OUTPUT", 106.56),
+    ("uo_out[4]", "OUTPUT", 102.72),
+    ("uo_out[5]", "OUTPUT", 98.88),
+    ("uo_out[6]", "OUTPUT", 95.04),
+    ("uo_out[7]", "OUTPUT", 91.20),
 ]
 
 EXPECTED_POWER_PINS = [
@@ -163,7 +163,7 @@ def validate_lef(lef_path):
     macro_name = macro_match.group(1)
     print(f"Found MACRO: {macro_name}")
     
-    # Check SIZE - must match TT10 1x1 tile exactly
+    # Check SIZE - must match IHP 1x1 tile exactly
     size_match = re.search(r'SIZE\s+([\d.]+)\s+BY\s+([\d.]+)', content)
     if size_match:
         die_width = float(size_match.group(1))
@@ -173,7 +173,7 @@ def validate_lef(lef_path):
         # Must match exactly (with small tolerance for floating point)
         if abs(die_width - DIE_WIDTH_UM) > 0.01 or abs(die_height - DIE_HEIGHT_UM) > 0.01:
             errors.append(
-                f"Die size {die_width} x {die_height} does not match TT10 1x1 template "
+                f"Die size {die_width} x {die_height} does not match IHP 1x1 template "
                 f"({DIE_WIDTH_UM} x {DIE_HEIGHT_UM}). Use a valid tile size!"
             )
     else:
@@ -191,12 +191,12 @@ def validate_lef(lef_path):
     
     # Validate each pin
     for pin_name, pin_info in pins.items():
-        # Check layer - must be "met4" (lowercase)
+        # Check layer - must be "Metal4" (capital M) for IHP
         if pin_info['layer'] is None:
             errors.append(f"Pin {pin_name} is missing LAYER definition")
-        elif pin_info['layer'] == "Metal4":
-            errors.append(f"Pin {pin_name} uses 'Metal4' - must be 'met4' (lowercase)")
-        elif pin_info['layer'] not in ["met4", "met3", "met2", "met1"]:
+        elif pin_info['layer'] == "met4":
+            errors.append(f"Pin {pin_name} uses 'met4' - must be 'Metal4' (capital M) for IHP")
+        elif pin_info['layer'] not in ["Metal4", "Metal3", "Metal2", "Metal1"]:
             warnings.append(f"Pin {pin_name} uses unusual layer: {pin_info['layer']}")
         
         if pin_info['rect'] is None:
@@ -261,7 +261,7 @@ def main():
     lef_path = sys.argv[1]
     
     print("=" * 60)
-    print("TinyTapeout TT10 Local Validator")
+    print("TinyTapeout IHP Local Validator")
     print("=" * 60)
     print(f"\nValidating LEF: {lef_path}")
     print("-" * 40)
