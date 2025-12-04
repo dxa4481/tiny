@@ -1,0 +1,57 @@
+{
+  "//": "TinyTapeout Silicon Art Configuration",
+  "//": "This config is optimized for art projects with minimal logic",
+  
+  "//": "Target density - lower values leave more space for fill/art",
+  "PL_TARGET_DENSITY_PCT": 40,
+
+  "//": "Clock period in nanoseconds (not critical for art projects)",
+  "CLOCK_PERIOD": 50,
+
+  "//": "Hold slack margin",
+  "PL_RESIZER_HOLD_SLACK_MARGIN": 0.1,
+  "GRT_RESIZER_HOLD_SLACK_MARGIN": 0.05,
+
+  "//": "Linter settings",
+  "RUN_LINTER": 1,
+  "LINTER_INCLUDE_PDK_MODELS": 1,
+
+  "//": "Clock port",
+  "CLOCK_PORT": "clk",
+
+  "//": "========= DO NOT CHANGE BELOW THIS LINE =========",
+
+  "//": "Save time by skipping some checks",
+  "RUN_KLAYOUT_XOR": 0,
+  "RUN_KLAYOUT_DRC": 0,
+
+  "//": "Don't buffer clock outputs",
+  "DESIGN_REPAIR_BUFFER_OUTPUT_PORTS": 0,
+
+  "//": "Reduce margins for more usable area",
+  "TOP_MARGIN_MULT": 1,
+  "BOTTOM_MARGIN_MULT": 1,
+  "LEFT_MARGIN_MULT": 6,
+  "RIGHT_MARGIN_MULT": 6,
+
+  "//": "Absolute die size",
+  "FP_SIZING": "absolute",
+
+  "GRT_ALLOW_CONGESTION": 1,
+
+  "FP_IO_HLENGTH": 2,
+  "FP_IO_VLENGTH": 2,
+
+  "FP_PDN_VPITCH": 38.87,
+
+  "//": "Clock tree synthesis",
+  "RUN_CTS": 1,
+
+  "//": "No power rings or met5",
+  "FP_PDN_MULTILAYER": 0,
+  "RT_MAX_LAYER": "met4",
+
+  "//": "Labels",
+  "MAGIC_DEF_LABELS": 0,
+  "MAGIC_WRITE_LEF_PINONLY": 1
+}
