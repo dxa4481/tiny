@@ -1,4 +1,5 @@
 name: gds
+# Combined Pixel Pig + Canary Token design
 
 on:
   push:

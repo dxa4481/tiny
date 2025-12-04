@@ -39,14 +39,14 @@ from create_silicon_art import (
 # Using different metal layers for different colors
 # =============================================================================
 
-# 5 colors mapped to IHP metal layers
-# These layers should be visible in the GDS viewer
+# 5 colors mapped to IHP metal layers (all datatype 0 for visibility)
+# Using only Metal1, Metal2, Metal3 which are known to be visible in GDS viewer
 PIXEL_LAYERS = {
-    'light_pink':  {'layer': 8,   'datatype': 0, 'name': 'Metal1'},   # Body
-    'dark_pink':   {'layer': 10,  'datatype': 0, 'name': 'Metal2'},   # Details/ears
+    'light_pink':  {'layer': 8,   'datatype': 0, 'name': 'Metal1'},   # Body (same as text)
+    'dark_pink':   {'layer': 10,  'datatype': 0, 'name': 'Metal2'},   # Details/ears  
     'medium_pink': {'layer': 30,  'datatype': 0, 'name': 'Metal3'},   # Snout
-    'golden':      {'layer': 126, 'datatype': 0, 'name': 'TopMetal1'},# Key
-    'black':       {'layer': 134, 'datatype': 0, 'name': 'TopMetal2'},# Eyes
+    'golden':      {'layer': 30,  'datatype': 0, 'name': 'Metal3'},   # Key (same as snout - both visible)
+    'black':       {'layer': 10,  'datatype': 0, 'name': 'Metal2'},   # Eyes (same as dark - visible as dark)
 }
 
 # =============================================================================
@@ -429,15 +429,13 @@ def create_svg_preview(lib, output_path, width=1000, height=600):
     padding = 40
     scale = min((width - 2*padding) / cell_width, (height - 2*padding) / cell_height)
     
-    # IHP layer colors
+    # IHP layer colors (only Metal1-4 and boundary)
     colors = {
-        8:   '#4169E1',  # Metal1 - Blue (text)
-        10:  '#32CD32',  # Metal2 - Green
-        30:  '#FF6347',  # Metal3 - Tomato
+        8:   '#4169E1',  # Metal1 - Blue (text + pig body)
+        10:  '#32CD32',  # Metal2 - Green (pig details + eyes)
+        30:  '#FF6347',  # Metal3 - Tomato (pig snout + key)
         36:  '#9370DB',  # Metal4 - Purple (pins)
-        63:  '#CCCCCC',  # prBndry - Gray
-        126: '#FFD700',  # TopMetal1 - Gold
-        134: '#1a1a1a',  # TopMetal2 - Black
+        63:  '#CCCCCC',  # prBndry - Gray (boundary)
     }
     
     svg_parts = [
@@ -507,8 +505,11 @@ def main():
         print("=" * 65)
         print()
         print("Design contents:")
-        print("  🐷 Pixel Pig (left side) - 5 colors on Metal1-3, TopMetal1-2")
+        print("  🐷 Pixel Pig (left side) - on Metal1, Metal2, Metal3")
         print("  📝 Canary Token (right side) - on Metal1")
+        print("  🔵 Metal1 (layer 8)  = text + pig body")
+        print("  🟢 Metal2 (layer 10) = pig details + eyes")
+        print("  🔴 Metal3 (layer 30) = pig snout + key")
 
 
 if __name__ == '__main__':
