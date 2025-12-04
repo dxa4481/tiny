@@ -19,11 +19,12 @@ Output files are created in the gds/ directory.
 import sys
 from pathlib import Path
 
+# gdstk is optional - only needed for GDS generation, not LEF generation
 try:
     import gdstk
+    GDSTK_AVAILABLE = True
 except ImportError:
-    print("Error: gdstk library required. Install with: pip install gdstk")
-    sys.exit(1)
+    GDSTK_AVAILABLE = False
 
 # =============================================================================
 # TinyTapeout 1x1 Tile Specifications
@@ -31,13 +32,14 @@ except ImportError:
 # =============================================================================
 
 # TinyTapeout TT10 template dimensions (1x1 tile)
+# Pin positions are defined relative to this template size
 TEMPLATE_WIDTH_UM = 161.00
 TEMPLATE_HEIGHT_UM = 111.52
 
 # Output die dimensions in micrometers
-# These can be scaled from template dimensions
-DIE_WIDTH_UM = 161.00
-DIE_HEIGHT_UM = 111.52
+# Pin positions will be scaled from template to these dimensions
+DIE_WIDTH_UM = 202.08
+DIE_HEIGHT_UM = 154.98
 
 # GDS Layers for Sky130
 # met4.pin layer for signal pins in GDS (must match what precheck expects)
@@ -207,15 +209,19 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
         output_dir: Directory for output files
         font_size: Font size in µm (None = auto-calculate to fit)
         min_feature_size: Minimum feature size in µm (Sky130 met1 = 0.14 µm)
-        die_width: Die width in µm (None = use template 161.0)
-        die_height: Die height in µm (None = use template 111.52)
+        die_width: Die width in µm (None = use default 202.08)
+        die_height: Die height in µm (None = use default 154.98)
     
     Sky130 Design Rules (for reference):
         - met1 min width: 0.14 µm
         - met1 min spacing: 0.14 µm
         - Recommended for visibility: ≥1 µm features (optical microscope)
     """
-    # Use template dimensions if not specified
+    if not GDSTK_AVAILABLE:
+        print("Error: gdstk library required. Install with: pip install gdstk")
+        sys.exit(1)
+    
+    # Use default dimensions if not specified
     actual_die_width = die_width if die_width else DIE_WIDTH_UM
     actual_die_height = die_height if die_height else DIE_HEIGHT_UM
     
@@ -624,7 +630,7 @@ def main():
         description='Create TinyTapeout silicon art GDS',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Font Size Guide (for 1x1 tile: 161.0 x 111.52 µm):
+Font Size Guide (for die: 202.08 x 154.98 µm):
   20 µm  - Large text, ~8 chars, easy to read at 50x
   10 µm  - Medium text, ~60 chars, readable at 50x  
    5 µm  - Small text, ~250 chars, needs 100x microscope
@@ -634,7 +640,7 @@ Font Size Guide (for 1x1 tile: 161.0 x 111.52 µm):
  0.5 µm  - Near DRC limit, ~24000 chars, SEM only
 
 Sky130 minimum feature size: 0.14 µm (met1)
-TinyTapeout TT10 1x1 tile: 161.0 x 111.52 µm
+Die size: 202.08 x 154.98 µm (pin positions scaled from TT10 template)
         """
     )
     parser.add_argument('--text', '-t', default='HELLO\nWORLD',
@@ -650,7 +656,7 @@ TinyTapeout TT10 1x1 tile: 161.0 x 111.52 µm
     text = args.text.replace('\\n', '\n')
     
     print(f"Creating silicon art with text: {repr(text)}")
-    print(f"TinyTapeout TT10 1x1 die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm")
+    print(f"Die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm")
     print(f"Output directory: {args.output}")
     print()
     
