@@ -4,16 +4,19 @@ This file is used to generate your project datasheet. Please fill in the informa
 
 ## How it works
 
-This is a **Silicon Art** project for TinyTapeout. The primary goal is to create text and graphics that will be visible under a microscope when the chip is fabricated.
+This is a **Silicon Art** project for TinyTapeout using the **custom GDS** workflow. The text "HELLO WORLD" is directly written as metal polygons on the silicon, visible under a microscope when the chip is fabricated.
 
 The design includes:
-1. A minimal functional Verilog design (XOR pass-through)
-2. Custom text/graphics added to metal layers via GDS post-processing
-3. The text "Hello World!" rendered in silicon
+1. **Custom GDS** with "HELLO WORLD" text rendered on metal layer 1 (met1)
+2. A decorative border frame around the text
+3. All required TinyTapeout pins properly defined on metal layer 4 (met4)
+4. A minimal Verilog stub that passes inputs through with an XOR pattern
 
-The functional logic is minimal - it simply XORs the 8-bit input with 0xAA (10101010 in binary), creating a checkerboard pattern. This keeps the standard cell usage low, leaving more silicon area available for the art.
+The text is approximately 25 micrometers tall and centered in the 161 × 111.52 µm tile area.
 
 ## How to test
+
+The functional logic is minimal (just for TinyTapeout compatibility):
 
 1. Apply any 8-bit input pattern to `ui_in[7:0]`
 2. The output `uo_out[7:0]` will be the input XOR'd with 0xAA
@@ -27,7 +30,8 @@ For example:
 
 No external hardware required. This is primarily an art project.
 
-To view the silicon art:
-- Use an optical microscope with at least 50x magnification
+**To view the silicon art after fabrication:**
+- Use an optical microscope with at least 50-100x magnification
 - A metallurgical/reflected light microscope works best
-- The text is visible in the metal layers of the fabricated chip
+- Look for the "HELLO WORLD" text on metal layer 1
+- The text appears as bright/reflective metal patterns

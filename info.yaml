@@ -3,8 +3,8 @@ project:
   title:        "Silicon Art - Hello World"
   author:       "Your Name"
   discord:      ""
-  description:  "Text art on silicon - visible under microscope"
-  language:     "Verilog"
+  description:  "Text art on silicon - HELLO WORLD visible under microscope"
+  language:     "Custom GDS"
   clock_hz:     0       # Not a clocked design
 
   # Tile size - use larger tiles for more text
@@ -13,9 +13,8 @@ project:
   # Top module name - must start with "tt_um_"
   top_module:  "tt_um_silicon_art"
 
-  # Source files
-  source_files:
-    - "project.v"
+  # Source files (empty for custom GDS)
+  source_files: []
 
 # Pinout (minimal - art project doesn't need complex I/O)
 pinout:

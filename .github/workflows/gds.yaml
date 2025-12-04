@@ -8,40 +8,39 @@ jobs:
   gds:
     runs-on: ubuntu-24.04
     steps:
-      - name: checkout repo
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Build GDS
-        uses: TinyTapeout/tt-gds-action@tt10
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          flow: openlane2
+          python-version: '3.11'
 
-  precheck:
-    needs: gds
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Run Tiny Tapeout Precheck
-        uses: TinyTapeout/tt-gds-action/precheck@tt10
+      - name: Install gdstk
+        run: pip install gdstk
 
-  gl_test:
-    needs: gds
-    runs-on: ubuntu-24.04
-    steps:
-      - name: checkout repo
-        uses: actions/checkout@v4
+      - name: Generate Silicon Art GDS
+        run: |
+          cd src
+          python create_silicon_art.py --text "HELLO\nWORLD" --output ../gds
+          ls -la ../gds/
+
+      - name: Build with Custom GDS
+        uses: TinyTapeout/tt-gds-action/custom_gds@tt10
         with:
-          submodules: recursive
-
-      - name: GL test
-        uses: TinyTapeout/tt-gds-action/gl_test@tt10
+          top_module: tt_um_silicon_art
+          gds_path: gds/tt_um_silicon_art.gds
+          lef_path: gds/tt_um_silicon_art.lef
+          verilog_path: gds/tt_um_silicon_art.v
 
   viewer:
     needs: gds
     runs-on: ubuntu-24.04
     permissions:
-      pages: write      # to deploy to Pages
-      id-token: write   # to verify the deployment originates from an appropriate source
+      pages: write
+      id-token: write
     steps:
-      - uses: TinyTapeout/tt-gds-action/viewer@tt10
+      - name: Deploy to GitHub Pages
+        uses: TinyTapeout/tt-gds-action/viewer@tt10
