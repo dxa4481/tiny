@@ -7,7 +7,7 @@ This file is used to generate your project datasheet. Please fill in the informa
 This is a **Silicon Art** project for TinyTapeout using the **custom GDS** workflow. The text "HELLO WORLD" is directly written as metal polygons on the silicon, visible under a microscope when the chip is fabricated.
 
 The design includes:
-1. **Custom GDS** with "HELLO WORLD" text rendered on metal layer 1 (met1)
+1. **Custom GDS** with an AWS key text rendered on metal layer 1 (met1)
 2. A decorative border frame around the text
 3. All required TinyTapeout pins properly defined on metal layer 4 (met4)
 4. A minimal Verilog stub that passes inputs through with an XOR pattern
