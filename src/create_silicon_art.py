@@ -164,16 +164,21 @@ def get_scaled_pins(die_width, die_height):
     Signal pin Y positions are fixed at (die_height - PIN_HEIGHT/2) so pin top
     aligns with die boundary.
     Pin rectangle size (0.3 x 1.0 um) is fixed and does not scale.
+    
+    Note: Scaled positions are rounded to the nearest 0.05 µm (50nm grid)
+    to match TinyTapeout's expected pin positions.
     """
     x_scale = die_width / TEMPLATE_WIDTH_UM
     
     # Signal pin Y: top of pin aligns with die top
     pin_y = die_height - PIN_HEIGHT / 2
     
-    # Scale signal pin X positions
+    # Scale signal pin X positions and round to nearest 0.05 µm (50nm grid)
     pins = []
     for name, direction, template_x in TEMPLATE_SIGNAL_PINS:
         scaled_x = template_x * x_scale
+        # Round to nearest 0.05 µm to match TinyTapeout's expected pin grid
+        scaled_x = round(scaled_x / 0.05) * 0.05
         pins.append((name, direction, scaled_x))
     
     return pins, pin_y
@@ -185,6 +190,9 @@ def get_scaled_power_pins(die_width, die_height):
     
     Power pins span from POWER_PIN_Y_START to (die_height - 5.0).
     X positions scale proportionally with die width.
+    
+    Note: Scaled positions are rounded to the nearest 0.05 µm (50nm grid)
+    to match TinyTapeout's expected pin positions.
     """
     x_scale = die_width / TEMPLATE_WIDTH_UM
     
@@ -194,6 +202,8 @@ def get_scaled_power_pins(die_width, die_height):
     power_pins = []
     for name, use_type, template_x in TEMPLATE_POWER_PINS:
         scaled_x = template_x * x_scale
+        # Round to nearest 0.05 µm to match TinyTapeout's expected pin grid
+        scaled_x = round(scaled_x / 0.05) * 0.05
         power_pins.append((name, use_type, scaled_x))
     
     return power_pins, POWER_PIN_Y_START, power_pin_y_end
@@ -482,7 +492,7 @@ MACRO {TOP_MODULE}
   CLASS BLOCK ;
   FOREIGN {TOP_MODULE} 0 0 ;
   ORIGIN 0 0 ;
-  SIZE {actual_die_width:.3f} BY {actual_die_height:.3f} ;
+  SIZE {actual_die_width:.2f} BY {actual_die_height:.2f} ;
   SYMMETRY X Y ;
 """
     
@@ -495,7 +505,7 @@ MACRO {TOP_MODULE}
     USE {use_type} ;
     PORT
       LAYER Metal4 ;
-        RECT {x_pos - POWER_PIN_WIDTH/2:.3f} {power_y_start:.3f} {x_pos + POWER_PIN_WIDTH/2:.3f} {power_y_end:.3f} ;
+        RECT {x_pos - POWER_PIN_WIDTH/2:.2f} {power_y_start:.2f} {x_pos + POWER_PIN_WIDTH/2:.2f} {power_y_end:.2f} ;
     END
   END {pin_name}
 """
@@ -516,7 +526,7 @@ MACRO {TOP_MODULE}
     USE SIGNAL ;
     PORT
       LAYER Metal4 ;
-        RECT {llx:.3f} {lly:.3f} {urx:.3f} {ury:.3f} ;
+        RECT {llx:.2f} {lly:.2f} {urx:.2f} {ury:.2f} ;
     END
   END {pin_name}
 """
