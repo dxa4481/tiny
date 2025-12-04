@@ -1,19 +1,12 @@
 #!/usr/bin/env python3
 """
-Pixel Pig Silicon Art Generator
+Pixel Pig + Canary Token Silicon Art Generator
 
-Creates a pixel art pig using multiple silicon layers for different colors.
-Each color maps to a different metal layer, creating a multi-layer artwork
-visible under different conditions/illumination.
+Creates a combined design with:
+- Canary token text (AWS credentials)
+- Pixel pig artwork
 
-Pixel data extracted from "pixel_pig (4).png" image.
-
-Layer Mapping (for visualization and microscopy):
-    - Light pink (body)    → met1 (layer 68)  - RGB(221, 142, 136)
-    - Dark pink (details)  → met2 (layer 69)  - RGB(153, 90, 86)
-    - Medium pink (snout)  → poly (layer 66)  - RGB(200, 109, 102)
-    - Golden (key)         → met3 (layer 70)  - RGB(174, 140, 87)
-    - Black (eyes)         → li1  (layer 67)  - RGB(30, 30, 30)
+Uses IHP-SG13G2 PDK layer specifications from create_silicon_art.py
 
 Usage:
     python create_pixel_pig.py
@@ -28,117 +21,48 @@ except ImportError:
     print("Error: gdstk library required. Install with: pip install gdstk")
     sys.exit(1)
 
+# Import IHP specifications from create_silicon_art
+from create_silicon_art import (
+    DIE_WIDTH_UM, DIE_HEIGHT_UM,
+    PIN_WIDTH, PIN_HEIGHT, PIN_Y_CENTER,
+    PIN_LAYER, PIN_DATATYPE,
+    TEXT_LAYER, TEXT_DATATYPE,
+    BOUND_LAYER, BOUND_DATATYPE,
+    LABEL_LAYER, LABEL_DATATYPE,
+    TOP_MODULE,
+    SIGNAL_PINS, POWER_PINS,
+    POWER_PIN_WIDTH, POWER_PIN_Y_START, POWER_PIN_Y_END,
+)
+
 # =============================================================================
-# TinyTapeout 1x1 Tile Specifications
+# IHP-SG13G2 Layer Definitions for Pixel Art
+# Using different metal layers for different colors
 # =============================================================================
 
-DIE_WIDTH_UM = 202.08
-DIE_HEIGHT_UM = 154.98
-
-# Module name
-TOP_MODULE = "tt_um_silicon_art"
-
-# =============================================================================
-# Layer Definitions (Sky130 PDK)
-# =============================================================================
-
-# 5 colors from the image mapped to different silicon layers
-# Using layers that are clearly visible in the TinyTapeout GDS viewer:
-# - met1, met2, met3 = Metal layers (most visible, different colors)
-# - li1 = Local interconnect (visible, distinct color)
-# - poly = Polysilicon (visible, good for dark features)
-LAYERS = {
-    'light_pink':  {'layer': 68, 'datatype': 20, 'name': 'met1', 'rgb': (221, 142, 136)},   # Body - blue in viewer
-    'dark_pink':   {'layer': 69, 'datatype': 20, 'name': 'met2', 'rgb': (153, 90, 86)},    # Details - cyan in viewer
-    'medium_pink': {'layer': 70, 'datatype': 20, 'name': 'met3', 'rgb': (200, 109, 102)},  # Snout - pink in viewer
-    'golden':      {'layer': 67, 'datatype': 20, 'name': 'li1',  'rgb': (174, 140, 87)},   # Key - tan in viewer
-    'black':       {'layer': 66, 'datatype': 20, 'name': 'poly', 'rgb': (30, 30, 30)},     # Eyes - red in viewer
+# 5 colors mapped to IHP metal layers
+# These layers should be visible in the GDS viewer
+PIXEL_LAYERS = {
+    'light_pink':  {'layer': 8,   'datatype': 0, 'name': 'Metal1'},   # Body
+    'dark_pink':   {'layer': 10,  'datatype': 0, 'name': 'Metal2'},   # Details/ears
+    'medium_pink': {'layer': 30,  'datatype': 0, 'name': 'Metal3'},   # Snout
+    'golden':      {'layer': 126, 'datatype': 0, 'name': 'TopMetal1'},# Key
+    'black':       {'layer': 134, 'datatype': 0, 'name': 'TopMetal2'},# Eyes
 }
-
-# Pin layer (met4)
-PIN_LAYER = 71
-PIN_DATATYPE = 20
-
-# Boundary/PR boundary layers
-BOUND_LAYER = 235
-BOUND_DATATYPE = 4
-
-# Label layer for pin names
-LABEL_LAYER = 71
-LABEL_DATATYPE = 5
-
-# =============================================================================
-# Pin Definitions (from TinyTapeout DEF file)
-# =============================================================================
-
-PINS = [
-    ("clk", "INPUT", 143.98),
-    ("ena", "INPUT", 146.74),
-    ("rst_n", "INPUT", 141.22),
-    ("ui_in[0]", "INPUT", 138.46),
-    ("ui_in[1]", "INPUT", 135.70),
-    ("ui_in[2]", "INPUT", 132.94),
-    ("ui_in[3]", "INPUT", 130.18),
-    ("ui_in[4]", "INPUT", 127.42),
-    ("ui_in[5]", "INPUT", 124.66),
-    ("ui_in[6]", "INPUT", 121.90),
-    ("ui_in[7]", "INPUT", 119.14),
-    ("uio_in[0]", "INPUT", 116.38),
-    ("uio_in[1]", "INPUT", 113.62),
-    ("uio_in[2]", "INPUT", 110.86),
-    ("uio_in[3]", "INPUT", 108.10),
-    ("uio_in[4]", "INPUT", 105.34),
-    ("uio_in[5]", "INPUT", 102.58),
-    ("uio_in[6]", "INPUT", 99.82),
-    ("uio_in[7]", "INPUT", 97.06),
-    ("uio_oe[0]", "OUTPUT", 50.14),
-    ("uio_oe[1]", "OUTPUT", 47.38),
-    ("uio_oe[2]", "OUTPUT", 44.62),
-    ("uio_oe[3]", "OUTPUT", 41.86),
-    ("uio_oe[4]", "OUTPUT", 39.10),
-    ("uio_oe[5]", "OUTPUT", 36.34),
-    ("uio_oe[6]", "OUTPUT", 33.58),
-    ("uio_oe[7]", "OUTPUT", 30.82),
-    ("uio_out[0]", "OUTPUT", 72.22),
-    ("uio_out[1]", "OUTPUT", 69.46),
-    ("uio_out[2]", "OUTPUT", 66.70),
-    ("uio_out[3]", "OUTPUT", 63.94),
-    ("uio_out[4]", "OUTPUT", 61.18),
-    ("uio_out[5]", "OUTPUT", 58.42),
-    ("uio_out[6]", "OUTPUT", 55.66),
-    ("uio_out[7]", "OUTPUT", 52.90),
-    ("uo_out[0]", "OUTPUT", 94.30),
-    ("uo_out[1]", "OUTPUT", 91.54),
-    ("uo_out[2]", "OUTPUT", 88.78),
-    ("uo_out[3]", "OUTPUT", 86.02),
-    ("uo_out[4]", "OUTPUT", 83.26),
-    ("uo_out[5]", "OUTPUT", 80.50),
-    ("uo_out[6]", "OUTPUT", 77.74),
-    ("uo_out[7]", "OUTPUT", 74.98),
-]
-
-PIN_Y = 154.48
-PIN_WIDTH = 0.3
-PIN_HEIGHT = 1.0
-
-POWER_PINS = [
-    ("VGND", "GROUND", 1.0),
-    ("VPWR", "POWER", 3.0),
-]
-POWER_PIN_WIDTH = 1.0
-POWER_PIN_HEIGHT = DIE_HEIGHT_UM - 2.0
-POWER_PIN_Y_CENTER = DIE_HEIGHT_UM / 2
-
 
 # =============================================================================
 # Pixel Art Definition - Extracted from "pixel_pig (4).png"
+# Grid: 19 x 12 pixels
 # =============================================================================
 
-# Grid size: 19 x 12 art pixels
-# Pixel positions (x, y) with origin at bottom-left
+LIGHT_PINK_PIXELS = [
+    (11, 0), (14, 0), (14, 1),
+    (12, 2), (13, 2), (14, 2), (15, 2),
+    (12, 3), (13, 3), (14, 3), (15, 3), (16, 3),
+    (12, 4), (13, 4), (14, 4), (15, 4),
+    (11, 5), (12, 5), (14, 5), (15, 5),
+    (10, 6), (11, 6), (12, 6), (13, 6),
+]
 
-# DARK_PINK - RGB(153, 90, 86) - Ears and body details
-# Layer: met2 (69:20)
 DARK_PINK_PIXELS = [
     (10, 0), (13, 0), (16, 0),
     (9, 1), (10, 1), (11, 1), (12, 1), (13, 1), (15, 1), (16, 1),
@@ -151,28 +75,12 @@ DARK_PINK_PIXELS = [
     (9, 8), (14, 8),
 ]
 
-# LIGHT_PINK - RGB(221, 142, 136) - Main body
-# Layer: met1 (68:20)
-LIGHT_PINK_PIXELS = [
-    (11, 0), (14, 0),
-    (14, 1),
-    (12, 2), (13, 2), (14, 2), (15, 2),
-    (12, 3), (13, 3), (14, 3), (15, 3), (16, 3),
-    (12, 4), (13, 4), (14, 4), (15, 4),
-    (11, 5), (12, 5), (14, 5), (15, 5),
-    (10, 6), (11, 6), (12, 6), (13, 6),
-]
-
-# MEDIUM_PINK - RGB(200, 109, 102) - Snout/nose details
-# Layer: poly (66:20)
 MEDIUM_PINK_PIXELS = [
     (8, 2), (9, 2), (10, 2), (11, 2),
     (9, 3), (11, 3),
     (8, 4), (9, 4), (10, 4), (11, 4),
 ]
 
-# GOLDEN - RGB(174, 140, 87) - Key
-# Layer: met3 (70:20)
 GOLDEN_PIXELS = [
     (3, 4), (4, 4), (5, 4),
     (2, 5), (6, 5),
@@ -184,29 +92,27 @@ GOLDEN_PIXELS = [
     (4, 11), (5, 11),
 ]
 
-# BLACK - RGB(30, 30, 30) - Eyes
-# Layer: li1 (67:20)
 BLACK_PIXELS = [
     (10, 5), (13, 5),
 ]
 
-# Grid dimensions from image analysis
 GRID_WIDTH = 19
 GRID_HEIGHT = 12
 
 
-def create_pixel_art_gds(output_dir="gds", pixel_size=None):
+def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     """
-    Create the pixel pig GDS file using multiple layers.
+    Create GDS with both canary token text and pixel pig.
     
     Args:
+        text: Canary token text to render
         output_dir: Directory for output files
-        pixel_size: Size of each pixel in micrometers (auto-calculated if None)
+        font_size: Font size in µm (None = auto)
+        pig_scale: Scale factor for the pig (0.4 = 40% of available height)
     """
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
     
-    # Create GDS library
     lib = gdstk.Library()
     cell = lib.new_cell(TOP_MODULE)
     
@@ -224,10 +130,10 @@ def create_pixel_art_gds(output_dir="gds", pixel_size=None):
     # -------------------------------------------------------------------------
     # 2. Add signal pins
     # -------------------------------------------------------------------------
-    for pin_name, direction, x_pos in PINS:
+    for pin_name, direction, x_pos in SIGNAL_PINS:
         pin_rect = gdstk.rectangle(
-            (x_pos - PIN_WIDTH/2, PIN_Y - PIN_HEIGHT/2),
-            (x_pos + PIN_WIDTH/2, PIN_Y + PIN_HEIGHT/2),
+            (x_pos - PIN_WIDTH/2, PIN_Y_CENTER - PIN_HEIGHT/2),
+            (x_pos + PIN_WIDTH/2, PIN_Y_CENTER + PIN_HEIGHT/2),
             layer=PIN_LAYER,
             datatype=PIN_DATATYPE
         )
@@ -235,19 +141,19 @@ def create_pixel_art_gds(output_dir="gds", pixel_size=None):
         
         label = gdstk.Label(
             pin_name,
-            (x_pos, PIN_Y),
+            (x_pos, PIN_Y_CENTER),
             layer=LABEL_LAYER,
             texttype=LABEL_DATATYPE
         )
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 2b. Add power pins
+    # 3. Add power pins
     # -------------------------------------------------------------------------
     for pin_name, use_type, x_pos in POWER_PINS:
         power_rect = gdstk.rectangle(
-            (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_CENTER - POWER_PIN_HEIGHT/2),
-            (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_CENTER + POWER_PIN_HEIGHT/2),
+            (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
+            (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
             layer=PIN_LAYER,
             datatype=PIN_DATATYPE
         )
@@ -255,68 +161,66 @@ def create_pixel_art_gds(output_dir="gds", pixel_size=None):
         
         label = gdstk.Label(
             pin_name,
-            (x_pos, POWER_PIN_Y_CENTER),
+            (x_pos, (POWER_PIN_Y_START + POWER_PIN_Y_END) / 2),
             layer=LABEL_LAYER,
             texttype=LABEL_DATATYPE
         )
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 3. Calculate pixel art placement using extracted grid dimensions
+    # 4. Calculate layout areas
+    # -------------------------------------------------------------------------
+    margin_left = 12.0   # Room for power pins
+    margin_right = 3.0
+    margin_bottom = 3.0
+    margin_top = 8.0     # Room for signal pins
+    
+    available_width = DIE_WIDTH_UM - margin_left - margin_right
+    available_height = DIE_HEIGHT_UM - margin_top - margin_bottom
+    
+    # Split: pig on left (30%), text on right (70%)
+    pig_area_width = available_width * 0.28
+    text_area_width = available_width * 0.70
+    gap = available_width * 0.02
+    
+    pig_area_x = margin_left
+    text_area_x = margin_left + pig_area_width + gap
+    
+    # -------------------------------------------------------------------------
+    # 5. Add pixel pig (scaled down)
     # -------------------------------------------------------------------------
     
-    # Calculate pixel size to fit in available area
-    # Leave margins: 8um from edges, 15um from top (for pins)
-    margin_x = 8.0
-    margin_bottom = 8.0
-    margin_top = 15.0  # Extra margin from pins
-    
-    available_width = DIE_WIDTH_UM - 2 * margin_x
-    available_height = DIE_HEIGHT_UM - margin_bottom - margin_top
-    
-    # Calculate pixel size to fit the grid
-    max_pixel_by_width = available_width / GRID_WIDTH
+    # Calculate pixel size to fit pig in its area
+    max_pixel_by_width = pig_area_width / GRID_WIDTH
     max_pixel_by_height = available_height / GRID_HEIGHT
+    pixel_size = min(max_pixel_by_width, max_pixel_by_height) * 0.85
     
-    auto_pixel_size = min(max_pixel_by_width, max_pixel_by_height) * 0.95
+    pig_width = GRID_WIDTH * pixel_size
+    pig_height = GRID_HEIGHT * pixel_size
     
-    if pixel_size is None or pixel_size > auto_pixel_size:
-        pixel_size = auto_pixel_size
+    # Center pig in its area
+    pig_offset_x = pig_area_x + (pig_area_width - pig_width) / 2
+    pig_offset_y = margin_bottom + (available_height - pig_height) / 2
     
-    print(f"Pixel size: {pixel_size:.2f} µm")
-    print(f"Grid dimensions: {GRID_WIDTH}x{GRID_HEIGHT} pixels = {GRID_WIDTH*pixel_size:.1f}x{GRID_HEIGHT*pixel_size:.1f} µm")
+    print(f"Pig pixel size: {pixel_size:.2f} µm")
+    print(f"Pig dimensions: {pig_width:.1f} x {pig_height:.1f} µm")
     
-    # Calculate offsets to center the art
-    art_width = GRID_WIDTH * pixel_size
-    art_height = GRID_HEIGHT * pixel_size
-    
-    offset_x = (DIE_WIDTH_UM - art_width) / 2
-    offset_y = margin_bottom + (available_height - art_height) / 2
-    
-    # -------------------------------------------------------------------------
-    # 4. Add all pixels from extracted data
-    # -------------------------------------------------------------------------
-    
-    # Map pixel arrays to their layer info
+    # Add all pig pixels
     pixel_data = [
-        ('light_pink', LIGHT_PINK_PIXELS, LAYERS['light_pink']),
-        ('dark_pink', DARK_PINK_PIXELS, LAYERS['dark_pink']),
-        ('medium_pink', MEDIUM_PINK_PIXELS, LAYERS['medium_pink']),
-        ('golden', GOLDEN_PIXELS, LAYERS['golden']),
-        ('black', BLACK_PIXELS, LAYERS['black']),
+        ('light_pink', LIGHT_PINK_PIXELS),
+        ('dark_pink', DARK_PINK_PIXELS),
+        ('medium_pink', MEDIUM_PINK_PIXELS),
+        ('golden', GOLDEN_PIXELS),
+        ('black', BLACK_PIXELS),
     ]
     
-    pixel_count = {}
-    
-    for color_name, positions, layer_info in pixel_data:
-        pixel_count[color_name] = len(positions)
-        
+    total_pixels = 0
+    for color_name, positions in pixel_data:
+        layer_info = PIXEL_LAYERS[color_name]
         for (gx, gy) in positions:
-            # Calculate pixel position
-            x = offset_x + gx * pixel_size
-            y = offset_y + gy * pixel_size
+            x = pig_offset_x + gx * pixel_size
+            y = pig_offset_y + gy * pixel_size
             
-            # Create pixel rectangle
             rect = gdstk.rectangle(
                 (x, y),
                 (x + pixel_size, y + pixel_size),
@@ -324,52 +228,108 @@ def create_pixel_art_gds(output_dir="gds", pixel_size=None):
                 datatype=layer_info['datatype']
             )
             cell.add(rect)
+            total_pixels += 1
     
-    print(f"\nPixel counts by color:")
-    total = 0
-    for color_name, positions, layer_info in pixel_data:
-        count = len(positions)
-        total += count
-        rgb = layer_info.get('rgb', (0, 0, 0))
-        print(f"  {color_name:12} ({layer_info['name']:4}): {count:3} pixels - RGB{rgb}")
-    print(f"  {'TOTAL':12}       : {total:3} pixels")
+    print(f"Pig pixels: {total_pixels}")
     
     # -------------------------------------------------------------------------
-    # 5. Save GDS file
+    # 6. Add canary token text
+    # -------------------------------------------------------------------------
+    lines = text.split('\n')
+    max_line_len = max(len(line) for line in lines)
+    num_lines = len(lines)
+    
+    char_width_ratio = 9/16
+    line_height_ratio = 5/4
+    
+    if font_size is None:
+        width_per_char = text_area_width / (max_line_len * char_width_ratio) if max_line_len > 0 else 20
+        height_per_line = available_height / (1 + (num_lines - 1) * line_height_ratio) if num_lines > 0 else 20
+        font_size = min(width_per_char, height_per_line) * 0.85
+        font_size = max(font_size, 0.5)
+        font_size = min(font_size, 15.0)
+    
+    print(f"Text font size: {font_size:.2f} µm")
+    
+    text_polys = gdstk.text(
+        text, 
+        font_size, 
+        (0, 0),
+        layer=TEXT_LAYER,
+        datatype=TEXT_DATATYPE
+    )
+    
+    if text_polys:
+        all_points = []
+        for poly in text_polys:
+            all_points.extend(poly.points)
+        
+        if all_points:
+            xs = [p[0] for p in all_points]
+            ys = [p[1] for p in all_points]
+            text_width = max(xs) - min(xs)
+            text_height = max(ys) - min(ys)
+            text_min_x = min(xs)
+            text_min_y = min(ys)
+            
+            # Center text in its area
+            center_x = text_area_x + text_area_width / 2
+            center_y = margin_bottom + available_height / 2
+            
+            offset_x = center_x - text_width / 2 - text_min_x
+            offset_y = center_y - text_height / 2 - text_min_y
+            
+            for poly in text_polys:
+                cell.add(poly.translate(offset_x, offset_y))
+            
+            print(f"Text dimensions: {text_width:.1f} x {text_height:.1f} µm")
+    
+    # -------------------------------------------------------------------------
+    # 7. Add decorative border
+    # -------------------------------------------------------------------------
+    border_width = 1.0
+    border_margin = 3.0
+    
+    outer = gdstk.rectangle(
+        (margin_left - 2, border_margin),
+        (DIE_WIDTH_UM - border_margin, DIE_HEIGHT_UM - margin_top + 2),
+        layer=TEXT_LAYER,
+        datatype=TEXT_DATATYPE
+    )
+    inner = gdstk.rectangle(
+        (margin_left - 2 + border_width, border_margin + border_width),
+        (DIE_WIDTH_UM - border_margin - border_width, DIE_HEIGHT_UM - margin_top + 2 - border_width)
+    )
+    border_polys = gdstk.boolean(outer, inner, "not", layer=TEXT_LAYER, datatype=TEXT_DATATYPE)
+    for poly in border_polys:
+        cell.add(poly)
+    
+    # -------------------------------------------------------------------------
+    # 8. Save files
     # -------------------------------------------------------------------------
     gds_path = output_path / f"{TOP_MODULE}.gds"
     lib.write_gds(gds_path)
     print(f"\nGDS saved to: {gds_path}")
     
-    # -------------------------------------------------------------------------
-    # 7. Create LEF file
-    # -------------------------------------------------------------------------
     lef_content = generate_lef()
     lef_path = output_path / f"{TOP_MODULE}.lef"
     with open(lef_path, 'w') as f:
         f.write(lef_content)
     print(f"LEF saved to: {lef_path}")
     
-    # -------------------------------------------------------------------------
-    # 8. Create Verilog stub
-    # -------------------------------------------------------------------------
     verilog_content = generate_verilog_stub()
     verilog_path = output_path / f"{TOP_MODULE}.v"
     with open(verilog_path, 'w') as f:
         f.write(verilog_content)
     print(f"Verilog saved to: {verilog_path}")
     
-    # -------------------------------------------------------------------------
-    # 9. Create SVG preview
-    # -------------------------------------------------------------------------
     create_svg_preview(lib, output_path / "preview.svg")
     
     return gds_path
 
 
 def generate_lef():
-    """Generate LEF file for the macro."""
-    
+    """Generate LEF file using IHP specifications."""
     lef = f"""VERSION 5.8 ;
 BUSBITCHARS "[]" ;
 DIVIDERCHAR "/" ;
@@ -382,28 +342,33 @@ MACRO {TOP_MODULE}
   SYMMETRY X Y ;
 """
     
-    # Add power pins
     for pin_name, use_type, x_pos in POWER_PINS:
+        llx = x_pos - POWER_PIN_WIDTH/2
+        urx = x_pos + POWER_PIN_WIDTH/2
         lef += f"""
   PIN {pin_name}
     DIRECTION INOUT ;
     USE {use_type} ;
     PORT
-      LAYER met4 ;
-        RECT {x_pos - POWER_PIN_WIDTH/2:.3f} {POWER_PIN_Y_CENTER - POWER_PIN_HEIGHT/2:.3f} {x_pos + POWER_PIN_WIDTH/2:.3f} {POWER_PIN_Y_CENTER + POWER_PIN_HEIGHT/2:.3f} ;
+      LAYER Metal4 ;
+        RECT {llx:.3f} {POWER_PIN_Y_START:.3f} {urx:.3f} {POWER_PIN_Y_END:.3f} ;
     END
   END {pin_name}
 """
     
-    # Add signal pins
-    for pin_name, direction, x_pos in PINS:
+    for pin_name, direction, x_pos in SIGNAL_PINS:
+        llx = x_pos - PIN_WIDTH/2
+        lly = PIN_Y_CENTER - PIN_HEIGHT/2
+        urx = x_pos + PIN_WIDTH/2
+        ury = PIN_Y_CENTER + PIN_HEIGHT/2
+        
         lef += f"""
   PIN {pin_name}
     DIRECTION {direction} ;
     USE SIGNAL ;
     PORT
-      LAYER met4 ;
-        RECT {x_pos - PIN_WIDTH/2:.3f} {PIN_Y - PIN_HEIGHT/2:.3f} {x_pos + PIN_WIDTH/2:.3f} {PIN_Y + PIN_HEIGHT/2:.3f} ;
+      LAYER Metal4 ;
+        RECT {llx:.3f} {lly:.3f} {urx:.3f} {ury:.3f} ;
     END
   END {pin_name}
 """
@@ -418,9 +383,8 @@ END LIBRARY
 
 def generate_verilog_stub():
     """Generate a Verilog stub module."""
-    
     return f"""// Verilog stub for {TOP_MODULE}
-// Pixel Pig Silicon Art Project
+// Combined Pixel Pig + Canary Token Silicon Art
 
 `default_nettype none
 
@@ -439,26 +403,22 @@ module {TOP_MODULE} (
     input  wire       rst_n
 );
 
-    // Simple pass-through (art project - minimal logic)
     assign uo_out = ui_in ^ 8'hAA;
     assign uio_out = 8'b0;
     assign uio_oe = 8'b0;
 
-    // Unused inputs
     wire _unused = &{{ena, clk, rst_n, uio_in, 1'b0}};
 
 endmodule
 """
 
 
-def create_svg_preview(lib, output_path, width=800, height=600):
-    """Create an SVG preview of the GDS with accurate pixel art colors from the image."""
-    
+def create_svg_preview(lib, output_path, width=1000, height=600):
+    """Create an SVG preview with both pig and text."""
     cell = lib.cells[0]
     bbox = cell.bounding_box()
     
     if bbox is None:
-        print("Warning: Cannot create SVG - no bounding box")
         return
     
     min_x, min_y = bbox[0]
@@ -467,72 +427,46 @@ def create_svg_preview(lib, output_path, width=800, height=600):
     cell_height = max_y - min_y
     
     padding = 40
-    scale = min((width - 2*padding) / cell_width,
-                (height - 2*padding) / cell_height)
+    scale = min((width - 2*padding) / cell_width, (height - 2*padding) / cell_height)
     
-    # Layer colors matching the EXACT RGB values from "pixel_pig (4).png"
+    # IHP layer colors
     colors = {
-        68: '#DD8E88',  # met1 - Light pink body - RGB(221, 142, 136)
-        69: '#995A56',  # met2 - Dark pink details - RGB(153, 90, 86)
-        70: '#C86D66',  # met3 - Medium pink NOSE - RGB(200, 109, 102)
-        67: '#AE8C57',  # li1 - Golden key - RGB(174, 140, 87)
-        66: '#1E1E1E',  # poly - Black eyes - RGB(30, 30, 30)
-        71: '#666666',  # met4 - Gray (pins)
-        235: '#EEEEEE', # boundary - Light gray
+        8:   '#4169E1',  # Metal1 - Blue (text)
+        10:  '#32CD32',  # Metal2 - Green
+        30:  '#FF6347',  # Metal3 - Tomato
+        36:  '#9370DB',  # Metal4 - Purple (pins)
+        63:  '#CCCCCC',  # prBndry - Gray
+        126: '#FFD700',  # TopMetal1 - Gold
+        134: '#1a1a1a',  # TopMetal2 - Black
     }
     
     svg_parts = [
         f'<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">',
-        f'  <defs>',
-        f'    <style>',
-        f'      .title {{ font-family: Arial, sans-serif; font-size: 16px; fill: #333; }}',
-        f'      .subtitle {{ font-family: Arial, sans-serif; font-size: 12px; fill: #666; }}',
-        f'    </style>',
-        f'  </defs>',
-        f'  <rect width="100%" height="100%" fill="#FAFAFA"/>',
+        f'  <rect width="100%" height="100%" fill="#1a1a2e"/>',
         f'  <g transform="translate({padding},{height - padding}) scale({scale},-{scale}) translate({-min_x},{-min_y})">',
     ]
     
-    # Group polygons by layer for z-ordering
-    layer_order = [235, 68, 69, 70, 67, 71]  # Draw boundary first, pins last
-    
-    polys_by_layer = {}
     for poly in cell.polygons:
         layer = poly.layer
-        if layer not in polys_by_layer:
-            polys_by_layer[layer] = []
-        polys_by_layer[layer].append(poly)
-    
-    # Add polygons in layer order
-    for layer in layer_order:
-        if layer in polys_by_layer:
-            color = colors.get(layer, '#888888')
-            opacity = 0.2 if layer == 235 else 1.0
-            stroke_width = 0.3 / scale if layer == 235 else 0
-            stroke = '#999' if layer == 235 else 'none'
-            
-            for poly in polys_by_layer[layer]:
-                points_str = ' '.join(f'{p[0]},{p[1]}' for p in poly.points)
-                svg_parts.append(
-                    f'    <polygon points="{points_str}" fill="{color}" '
-                    f'fill-opacity="{opacity}" stroke="{stroke}" stroke-width="{stroke_width}"/>'
-                )
+        color = colors.get(layer, '#888888')
+        opacity = 0.3 if layer == 63 else 0.9
+        points_str = ' '.join(f'{p[0]},{p[1]}' for p in poly.points)
+        svg_parts.append(
+            f'    <polygon points="{points_str}" fill="{color}" '
+            f'fill-opacity="{opacity}" stroke="{color}" stroke-width="{0.2/scale}"/>'
+        )
     
     svg_parts.extend([
         '  </g>',
-        f'  <text x="{width/2}" y="25" text-anchor="middle" class="title">',
-        f'    TinyTapeout Pixel Pig - Multi-Layer Silicon Art',
-        f'  </text>',
-        f'  <text x="{width/2}" y="45" text-anchor="middle" class="subtitle">',
-        f'    met1: body | met2: details | met3: snout | li1: key | poly: eyes',
+        f'  <text x="{width/2}" y="25" text-anchor="middle" fill="white" font-size="14">',
+        f'    TinyTapeout IHP - Pixel Pig + Canary Token',
         f'  </text>',
         '</svg>'
     ])
     
     with open(output_path, 'w') as f:
         f.write('\n'.join(svg_parts))
-    
     print(f"SVG preview saved to: {output_path}")
 
 
@@ -540,41 +474,41 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(
-        description='Create TinyTapeout Pixel Pig silicon art GDS'
+        description='Create combined Pixel Pig + Canary Token GDS'
     )
+    parser.add_argument('--text', '-t', 
+        default='[default]\naws_access_key_id = AKIAX24QKKOLLIHNWPFY\naws_secret_access_key = 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\noutput = json\nregion = us-east-2',
+        help='Canary token text')
     parser.add_argument('--output', '-o', default='gds',
                        help='Output directory')
-    parser.add_argument('--pixel-size', '-p', type=float, default=None,
-                       help='Pixel size in µm (auto-calculated if not specified)')
+    parser.add_argument('--font-size', '-s', type=float, default=None,
+                       help='Font size in µm (auto if not specified)')
     
     args = parser.parse_args()
+    text = args.text.replace('\\n', '\n')
     
-    print("=" * 60)
-    print("Pixel Pig Silicon Art Generator")
-    print("Extracted from: pixel_pig (4).png")
-    print("=" * 60)
-    print(f"Die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm")
-    print(f"Output directory: {args.output}")
+    print("=" * 65)
+    print("Pixel Pig + Canary Token Silicon Art Generator")
+    print("=" * 65)
+    print(f"Die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm (IHP 1x1 tile)")
+    print(f"Output: {args.output}")
     print()
     
-    gds_path = create_pixel_art_gds(args.output, pixel_size=args.pixel_size)
+    gds_path = create_combined_gds(text, args.output, font_size=args.font_size)
     
     if gds_path:
         print()
-        print("=" * 60)
-        print("SUCCESS! Files created:")
+        print("=" * 65)
+        print("SUCCESS! Combined design created:")
         print(f"  - {args.output}/{TOP_MODULE}.gds")
         print(f"  - {args.output}/{TOP_MODULE}.lef")
         print(f"  - {args.output}/{TOP_MODULE}.v")
         print(f"  - {args.output}/preview.svg")
-        print("=" * 60)
+        print("=" * 65)
         print()
-        print("Layer Legend (5 colors from image):")
-        print("  🟠 met1 (layer 68) - Light pink body     RGB(221, 142, 136)")
-        print("  🟤 met2 (layer 69) - Dark pink details   RGB(153, 90, 86)")
-        print("  🔴 met3 (layer 70) - Medium pink snout   RGB(200, 109, 102)")
-        print("  🟡 li1  (layer 67) - Golden key          RGB(174, 140, 87)")
-        print("  ⚫ poly (layer 66) - Black eyes          RGB(30, 30, 30)")
+        print("Design contents:")
+        print("  🐷 Pixel Pig (left side) - 5 colors on Metal1-3, TopMetal1-2")
+        print("  📝 Canary Token (right side) - on Metal1")
 
 
 if __name__ == '__main__':
