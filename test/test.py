@@ -13,7 +13,7 @@ async def test_silicon_art(dut):
     dut._log.info("Starting silicon art test")
 
     # Create a clock (not really needed for combinational logic but required by TT)
-    clock = Clock(dut.clk, 10, units="us")
+    clock = Clock(dut.clk, 10, unit="us")
     cocotb.start_soon(clock.start())
 
     # Reset
