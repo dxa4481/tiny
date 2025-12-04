@@ -13,8 +13,9 @@ project:
   # Top module name - must start with "tt_um_"
   top_module:  "tt_um_silicon_art"
 
-  # Source files (empty for custom GDS)
-  source_files: []
+  # Source files
+  source_files:
+    - project.v
 
 # Pinout (minimal - art project doesn't need complex I/O)
 pinout:
