@@ -4,15 +4,16 @@ This file is used to generate your project datasheet. Please fill in the informa
 
 ## How it works
 
-This is a **Silicon Art** project for TinyTapeout using the **custom GDS** workflow. The text "HELLO WORLD" is directly written as metal polygons on the silicon, visible under a microscope when the chip is fabricated.
+This is a **Silicon Art** project for TinyTapeout using the **custom GDS** workflow. A canary token is directly written as metal polygons on the silicon, visible under a microscope when the chip is fabricated.
 
 The design includes:
-1. **Custom GDS** with an AWS key text rendered on metal layer 1 (met1)
+1. **Custom GDS** with a canary token rendered on metal layer 1 (met1)
 2. A decorative border frame around the text
 3. All required TinyTapeout pins properly defined on metal layer 4 (met4)
-4. A minimal Verilog stub that passes inputs through with an XOR pattern
+4. Power pins (VPWR, VGND) for proper power grid connection
+5. A minimal Verilog stub that passes inputs through with an XOR pattern
 
-The text is approximately 25 micrometers tall and centered in the 161 × 111.52 µm tile area.
+The text is centered in the 202.08 × 154.98 µm tile area (TinyTapeout 1x1 tile).
 
 ## How to test
 
@@ -33,5 +34,5 @@ No external hardware required. This is primarily an art project.
 **To view the silicon art after fabrication:**
 - Use an optical microscope with at least 50-100x magnification
 - A metallurgical/reflected light microscope works best
-- Look for the "HELLO WORLD" text on metal layer 1
+- Look for the canary token text on metal layer 1
 - The text appears as bright/reflective metal patterns
