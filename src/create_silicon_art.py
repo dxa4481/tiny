@@ -26,15 +26,14 @@ except ImportError:
     sys.exit(1)
 
 # =============================================================================
-# TinyTapeout TT10 1x1 Tile Specifications
-# These values are derived from the official template DEF file:
-# https://github.com/TinyTapeout/tt-support-tools/blob/tt10/def/tt_block_1x1_pg.def
+# TinyTapeout 1x1 Tile Specifications
+# These values must match the expected tile dimensions for TinyTapeout
 # =============================================================================
 
-# Die dimensions in micrometers (TinyTapeout TT10 1x1 tile)
-# From DEF: DIEAREA ( 0 0 ) ( 161000 111520 ) with UNITS DISTANCE MICRONS 1000
-DIE_WIDTH_UM = 161.0
-DIE_HEIGHT_UM = 111.52
+# Die dimensions in micrometers (TinyTapeout 1x1 tile)
+# Standard TinyTapeout tile size: 202.08 x 154.98 um
+DIE_WIDTH_UM = 202.08
+DIE_HEIGHT_UM = 154.98
 
 # GDS Layers for Sky130
 # met4.pin layer for signal pins in GDS (must match what precheck expects)
@@ -71,64 +70,66 @@ TOP_MODULE = "tt_um_silicon_art"
 PIN_WIDTH = 0.3    # 300nm = 0.3um
 PIN_HEIGHT = 1.0   # 1000nm = 1.0um
 
-# Pin center Y position (from DEF PLACED y-coordinate)
-PIN_Y = 111.02     # um from bottom
+# Pin center Y position (scaled for 202.08x154.98 die)
+# Original 111.02 * (154.98/111.52) = 154.31
+PIN_Y = 154.31     # um from bottom
 
+# Scale factor for X positions: 202.08 / 161.0 = 1.2551
 PINS = [
-    # Control signals (x positions in um from DEF PLACED coordinates)
-    ("clk", "INPUT", 143.98),
-    ("ena", "INPUT", 146.74),
-    ("rst_n", "INPUT", 141.22),
+    # Control signals (x positions scaled for 202.08um width)
+    ("clk", "INPUT", 180.70),
+    ("ena", "INPUT", 184.16),
+    ("rst_n", "INPUT", 177.24),
     
     # Input bus ui_in[7:0]
-    ("ui_in[0]", "INPUT", 138.46),
-    ("ui_in[1]", "INPUT", 135.70),
-    ("ui_in[2]", "INPUT", 132.94),
-    ("ui_in[3]", "INPUT", 130.18),
-    ("ui_in[4]", "INPUT", 127.42),
-    ("ui_in[5]", "INPUT", 124.66),
-    ("ui_in[6]", "INPUT", 121.90),
-    ("ui_in[7]", "INPUT", 119.14),
+    ("ui_in[0]", "INPUT", 173.78),
+    ("ui_in[1]", "INPUT", 170.32),
+    ("ui_in[2]", "INPUT", 166.86),
+    ("ui_in[3]", "INPUT", 163.40),
+    ("ui_in[4]", "INPUT", 159.94),
+    ("ui_in[5]", "INPUT", 156.48),
+    ("ui_in[6]", "INPUT", 153.02),
+    ("ui_in[7]", "INPUT", 149.56),
     
     # Bidirectional input bus uio_in[7:0]
-    ("uio_in[0]", "INPUT", 116.38),
-    ("uio_in[1]", "INPUT", 113.62),
-    ("uio_in[2]", "INPUT", 110.86),
-    ("uio_in[3]", "INPUT", 108.10),
-    ("uio_in[4]", "INPUT", 105.34),
-    ("uio_in[5]", "INPUT", 102.58),
-    ("uio_in[6]", "INPUT", 99.82),
-    ("uio_in[7]", "INPUT", 97.06),
+    ("uio_in[0]", "INPUT", 146.10),
+    ("uio_in[1]", "INPUT", 142.63),
+    ("uio_in[2]", "INPUT", 139.17),
+    ("uio_in[3]", "INPUT", 135.71),
+    ("uio_in[4]", "INPUT", 132.25),
+    ("uio_in[5]", "INPUT", 128.79),
+    ("uio_in[6]", "INPUT", 125.33),
+    ("uio_in[7]", "INPUT", 121.87),
     
     # Output enable bus uio_oe[7:0]
-    ("uio_oe[0]", "OUTPUT", 50.14),
-    ("uio_oe[1]", "OUTPUT", 47.38),
-    ("uio_oe[2]", "OUTPUT", 44.62),
-    ("uio_oe[3]", "OUTPUT", 41.86),
-    ("uio_oe[4]", "OUTPUT", 39.10),
-    ("uio_oe[5]", "OUTPUT", 36.34),
-    ("uio_oe[6]", "OUTPUT", 33.58),
-    ("uio_oe[7]", "OUTPUT", 30.82),
+    ("uio_oe[0]", "OUTPUT", 62.93),
+    ("uio_oe[1]", "OUTPUT", 59.47),
+    ("uio_oe[2]", "OUTPUT", 56.01),
+    ("uio_oe[3]", "OUTPUT", 52.55),
+    ("uio_oe[4]", "OUTPUT", 49.08),
+    ("uio_oe[5]", "OUTPUT", 45.62),
+    ("uio_oe[6]", "OUTPUT", 42.16),
+    ("uio_oe[7]", "OUTPUT", 38.70),
     
     # Bidirectional output bus uio_out[7:0]
-    ("uio_out[0]", "OUTPUT", 72.22),
-    ("uio_out[1]", "OUTPUT", 69.46),
-    ("uio_out[2]", "OUTPUT", 66.70),
-    ("uio_out[3]", "OUTPUT", 63.94),
-    ("uio_out[4]", "OUTPUT", 61.18),
-    ("uio_out[5]", "OUTPUT", 58.42),
-    ("uio_out[6]", "OUTPUT", 55.66),
-    ("uio_out[7]", "OUTPUT", 52.90),
+    ("uio_out[0]", "OUTPUT", 90.65),
+    ("uio_out[1]", "OUTPUT", 87.19),
+    ("uio_out[2]", "OUTPUT", 83.72),
+    ("uio_out[3]", "OUTPUT", 80.26),
+    ("uio_out[4]", "OUTPUT", 76.80),
+    ("uio_out[5]", "OUTPUT", 73.34),
+    ("uio_out[6]", "OUTPUT", 69.88),
+    ("uio_out[7]", "OUTPUT", 66.42),
     
     # Output bus uo_out[7:0]
-    ("uo_out[0]", "OUTPUT", 94.30),
-    ("uo_out[1]", "OUTPUT", 91.54),
-    ("uo_out[2]", "OUTPUT", 88.78),
-    ("uo_out[3]", "OUTPUT", 86.02),
-    ("uo_out[4]", "OUTPUT", 83.26),
-    ("uo_out[5]", "OUTPUT", 80.50),
-    ("uo_out[6]", "OUTPUT", 77.74),
-    ("uo_out[7]", "OUTPUT", 74.98),
+    ("uo_out[0]", "OUTPUT", 118.41),
+    ("uo_out[1]", "OUTPUT", 114.94),
+    ("uo_out[2]", "OUTPUT", 111.48),
+    ("uo_out[3]", "OUTPUT", 108.02),
+    ("uo_out[4]", "OUTPUT", 104.56),
+    ("uo_out[5]", "OUTPUT", 101.10),
+    ("uo_out[6]", "OUTPUT", 97.64),
+    ("uo_out[7]", "OUTPUT", 94.18),
 ]
 
 # Power pin definitions (on met4, positioned for proper power grid connection)
@@ -143,9 +144,9 @@ POWER_PIN_Y_END = DIE_HEIGHT_UM - 5.0  # um (within 10um of top edge)
 POWER_PIN_HEIGHT = POWER_PIN_Y_END - POWER_PIN_Y_START  # um
 
 POWER_PINS = [
-    # (name, use_type, x_center_position)
-    ("VGND", "GROUND", 5.0),   # Left side
-    ("VPWR", "POWER", 8.0),    # Left side, next to VGND
+    # (name, use_type, x_center_position) - scaled for 202.08um width
+    ("VGND", "GROUND", 6.28),   # Left side
+    ("VPWR", "POWER", 10.04),   # Left side, next to VGND
 ]
 
 
@@ -551,17 +552,17 @@ def main():
         description='Create TinyTapeout silicon art GDS',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Font Size Guide (for TT10 1x1 tile: 161 x 111.5 µm):
-  20 µm  - Large text, ~6 chars, easy to read at 50x
-  10 µm  - Medium text, ~40 chars, readable at 50x  
-   5 µm  - Small text, ~160 chars, needs 100x microscope
-   3 µm  - Tiny text, ~450 chars, needs 200x microscope
-   2 µm  - Very tiny, ~1000 chars, needs 500x microscope
-   1 µm  - Microscopic, ~4000 chars, needs SEM or 1000x
- 0.5 µm  - Near DRC limit, ~16000 chars, SEM only
+Font Size Guide (for 1x1 tile: 202.08 x 154.98 µm):
+  20 µm  - Large text, ~8 chars, easy to read at 50x
+  10 µm  - Medium text, ~60 chars, readable at 50x  
+   5 µm  - Small text, ~250 chars, needs 100x microscope
+   3 µm  - Tiny text, ~700 chars, needs 200x microscope
+   2 µm  - Very tiny, ~1500 chars, needs 500x microscope
+   1 µm  - Microscopic, ~6000 chars, needs SEM or 1000x
+ 0.5 µm  - Near DRC limit, ~24000 chars, SEM only
 
 Sky130 minimum feature size: 0.14 µm (met1)
-TinyTapeout TT10 1x1 tile: 161.0 x 111.52 µm
+TinyTapeout 1x1 tile: 202.08 x 154.98 µm
         """
     )
     parser.add_argument('--text', '-t', default='HELLO\nWORLD',
@@ -577,7 +578,7 @@ TinyTapeout TT10 1x1 tile: 161.0 x 111.52 µm
     text = args.text.replace('\\n', '\n')
     
     print(f"Creating silicon art with text: {repr(text)}")
-    print(f"TinyTapeout TT10 die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm")
+    print(f"TinyTapeout 1x1 die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm")
     print(f"Output directory: {args.output}")
     print()
     
@@ -586,7 +587,7 @@ TinyTapeout TT10 1x1 tile: 161.0 x 111.52 µm
     if gds_path:
         print()
         print("=" * 60)
-        print("SUCCESS! Files created for TinyTapeout TT10:")
+        print("SUCCESS! Files created for TinyTapeout:")
         print(f"  - {args.output}/{TOP_MODULE}.gds")
         print(f"  - {args.output}/{TOP_MODULE}.lef")
         print(f"  - {args.output}/{TOP_MODULE}.v")
