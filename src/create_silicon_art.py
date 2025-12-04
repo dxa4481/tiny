@@ -119,6 +119,17 @@ PIN_Y = 154.48  # um from bottom (0.5 um from top edge)
 PIN_WIDTH = 0.3  # um
 PIN_HEIGHT = 1.0  # um
 
+# Power pin definitions (on met4, left edge as vertical stripes)
+# These are required by TinyTapeout for proper power grid connection
+POWER_PINS = [
+    # (name, use_type, x_position)
+    ("VGND", "GROUND", 1.0),
+    ("VPWR", "POWER", 3.0),
+]
+POWER_PIN_WIDTH = 1.0  # um
+POWER_PIN_HEIGHT = DIE_HEIGHT_UM - 2.0  # Nearly full height
+POWER_PIN_Y_CENTER = DIE_HEIGHT_UM / 2  # Centered vertically
+
 
 def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None, min_feature_size=0.14):
     """
@@ -172,6 +183,28 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
         label = gdstk.Label(
             pin_name,
             (x_pos, PIN_Y),
+            layer=LABEL_LAYER,
+            texttype=LABEL_DATATYPE
+        )
+        cell.add(label)
+    
+    # -------------------------------------------------------------------------
+    # 2b. Add power pins (VGND, VPWR) on met4
+    # -------------------------------------------------------------------------
+    for pin_name, use_type, x_pos in POWER_PINS:
+        # Power pin rectangle (vertical stripe on left edge)
+        power_rect = gdstk.rectangle(
+            (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_CENTER - POWER_PIN_HEIGHT/2),
+            (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_CENTER + POWER_PIN_HEIGHT/2),
+            layer=PIN_LAYER,
+            datatype=PIN_DATATYPE
+        )
+        cell.add(power_rect)
+        
+        # Power pin label
+        label = gdstk.Label(
+            pin_name,
+            (x_pos, POWER_PIN_Y_CENTER),
             layer=LABEL_LAYER,
             texttype=LABEL_DATATYPE
         )
@@ -337,7 +370,20 @@ MACRO {TOP_MODULE}
   SYMMETRY X Y ;
 """
     
-    # Add pin definitions
+    # Add power pin definitions (VGND, VPWR)
+    for pin_name, use_type, x_pos in POWER_PINS:
+        lef += f"""
+  PIN {pin_name}
+    DIRECTION INOUT ;
+    USE {use_type} ;
+    PORT
+      LAYER met4 ;
+        RECT {x_pos - POWER_PIN_WIDTH/2:.3f} {POWER_PIN_Y_CENTER - POWER_PIN_HEIGHT/2:.3f} {x_pos + POWER_PIN_WIDTH/2:.3f} {POWER_PIN_Y_CENTER + POWER_PIN_HEIGHT/2:.3f} ;
+    END
+  END {pin_name}
+"""
+    
+    # Add signal pin definitions
     for pin_name, direction, x_pos in PINS:
         lef += f"""
   PIN {pin_name}
@@ -367,6 +413,10 @@ def generate_verilog_stub():
 `default_nettype none
 
 module {TOP_MODULE} (
+`ifdef USE_POWER_PINS
+    inout  wire       VPWR,
+    inout  wire       VGND,
+`endif
     input  wire [7:0] ui_in,
     output wire [7:0] uo_out,
     input  wire [7:0] uio_in,
