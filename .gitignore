@@ -1,0 +1,54 @@
+# Build artifacts
+runs/
+*.gds
+*.lef
+*.mag
+*.spice
+*.spi
+*.v.powered.v
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.env
+
+# Test results
+test/results.xml
+test/sim_build/
+
+# Cocotb
+*.vcd
+*.fst
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
