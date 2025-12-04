@@ -43,12 +43,16 @@ TOP_MODULE = "tt_um_silicon_art"
 # =============================================================================
 
 # 5 colors from the image mapped to different silicon layers
+# Using layers that are clearly visible in the TinyTapeout GDS viewer:
+# - met1, met2, met3 = Metal layers (most visible, different colors)
+# - li1 = Local interconnect (visible, distinct color)
+# - poly = Polysilicon (visible, good for dark features)
 LAYERS = {
-    'light_pink':  {'layer': 68, 'datatype': 20, 'name': 'met1', 'rgb': (221, 142, 136)},   # Body
-    'dark_pink':   {'layer': 69, 'datatype': 20, 'name': 'met2', 'rgb': (153, 90, 86)},    # Details/ears
-    'medium_pink': {'layer': 66, 'datatype': 20, 'name': 'poly', 'rgb': (200, 109, 102)},  # Snout details
-    'golden':      {'layer': 70, 'datatype': 20, 'name': 'met3', 'rgb': (174, 140, 87)},   # Key
-    'black':       {'layer': 67, 'datatype': 20, 'name': 'li1',  'rgb': (30, 30, 30)},     # Eyes
+    'light_pink':  {'layer': 68, 'datatype': 20, 'name': 'met1', 'rgb': (221, 142, 136)},   # Body - blue in viewer
+    'dark_pink':   {'layer': 69, 'datatype': 20, 'name': 'met2', 'rgb': (153, 90, 86)},    # Details - cyan in viewer
+    'medium_pink': {'layer': 70, 'datatype': 20, 'name': 'met3', 'rgb': (200, 109, 102)},  # Snout - pink in viewer
+    'golden':      {'layer': 67, 'datatype': 20, 'name': 'li1',  'rgb': (174, 140, 87)},   # Key - tan in viewer
+    'black':       {'layer': 66, 'datatype': 20, 'name': 'poly', 'rgb': (30, 30, 30)},     # Eyes - red in viewer
 }
 
 # Pin layer (met4)
@@ -467,13 +471,12 @@ def create_svg_preview(lib, output_path, width=800, height=600):
                 (height - 2*padding) / cell_height)
     
     # Layer colors matching the EXACT RGB values from "pixel_pig (4).png"
-    # Using the actual hex equivalents of the extracted colors
     colors = {
         68: '#DD8E88',  # met1 - Light pink body - RGB(221, 142, 136)
         69: '#995A56',  # met2 - Dark pink details - RGB(153, 90, 86)
-        66: '#C86D66',  # poly - Medium pink NOSE - RGB(200, 109, 102)
-        70: '#AE8C57',  # met3 - Golden key - RGB(174, 140, 87)
-        67: '#1E1E1E',  # li1 - Black eyes - RGB(30, 30, 30)
+        70: '#C86D66',  # met3 - Medium pink NOSE - RGB(200, 109, 102)
+        67: '#AE8C57',  # li1 - Golden key - RGB(174, 140, 87)
+        66: '#1E1E1E',  # poly - Black eyes - RGB(30, 30, 30)
         71: '#666666',  # met4 - Gray (pins)
         235: '#EEEEEE', # boundary - Light gray
     }
@@ -522,7 +525,7 @@ def create_svg_preview(lib, output_path, width=800, height=600):
         f'    TinyTapeout Pixel Pig - Multi-Layer Silicon Art',
         f'  </text>',
         f'  <text x="{width/2}" y="45" text-anchor="middle" class="subtitle">',
-        f'    met1: body | met2: details | poly: snout | met3: key | li1: eyes',
+        f'    met1: body | met2: details | met3: snout | li1: key | poly: eyes',
         f'  </text>',
         '</svg>'
     ])
@@ -569,9 +572,9 @@ def main():
         print("Layer Legend (5 colors from image):")
         print("  🟠 met1 (layer 68) - Light pink body     RGB(221, 142, 136)")
         print("  🟤 met2 (layer 69) - Dark pink details   RGB(153, 90, 86)")
-        print("  🔴 poly (layer 66) - Medium pink snout   RGB(200, 109, 102)")
-        print("  🟡 met3 (layer 70) - Golden key          RGB(174, 140, 87)")
-        print("  ⚫ li1  (layer 67) - Black eyes          RGB(30, 30, 30)")
+        print("  🔴 met3 (layer 70) - Medium pink snout   RGB(200, 109, 102)")
+        print("  🟡 li1  (layer 67) - Golden key          RGB(174, 140, 87)")
+        print("  ⚫ poly (layer 66) - Black eyes          RGB(30, 30, 30)")
 
 
 if __name__ == '__main__':
