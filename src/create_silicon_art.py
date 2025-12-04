@@ -26,18 +26,26 @@ except ImportError:
     sys.exit(1)
 
 # =============================================================================
-# TinyTapeout 1x1 Tile Specifications
+# TinyTapeout TT10 1x1 Tile Specifications
+# These values are derived from the official template DEF file:
+# https://github.com/TinyTapeout/tt-support-tools/blob/tt10/def/tt_block_1x1_pg.def
 # =============================================================================
 
-# Die dimensions in micrometers (TinyTapeout 1x1 tile)
-DIE_WIDTH_UM = 202.08
-DIE_HEIGHT_UM = 154.98
+# Die dimensions in micrometers (TinyTapeout TT10 1x1 tile)
+# From DEF: DIEAREA ( 0 0 ) ( 161000 111520 ) with UNITS DISTANCE MICRONS 1000
+DIE_WIDTH_UM = 161.0
+DIE_HEIGHT_UM = 111.52
 
-# Pin layer (met4)
+# GDS Layers for Sky130
+# met4.pin layer for signal pins in GDS (must match what precheck expects)
 PIN_LAYER = 71
-PIN_DATATYPE = 20
+PIN_DATATYPE = 16  # met4.pin datatype
 
-# Text layer (met1 - most visible under microscope)
+# met4.drawing layer for power pins in GDS
+MET4_DRAWING_LAYER = 71
+MET4_DRAWING_DATATYPE = 20  # met4.drawing datatype
+
+# Text layer (met1.drawing - most visible under microscope)
 TEXT_LAYER = 68  
 TEXT_DATATYPE = 20
 
@@ -45,7 +53,7 @@ TEXT_DATATYPE = 20
 BOUND_LAYER = 235
 BOUND_DATATYPE = 4
 
-# Label layer for pin names
+# Label layer for pin names (met4.label)
 LABEL_LAYER = 71
 LABEL_DATATYPE = 5
 
@@ -53,12 +61,21 @@ LABEL_DATATYPE = 5
 TOP_MODULE = "tt_um_silicon_art"
 
 # =============================================================================
-# Pin Definitions (from TinyTapeout DEF file)
+# Pin Definitions (from TinyTapeout TT10 DEF file)
 # All coordinates in micrometers, pins on met4 at top edge
+# Pin rectangle: (-150 -500) to (150 500) in nm = 0.3um x 1.0um
+# Pin Y position: 111.02um (placed so top of 1um pin aligns with die top at 111.52um)
 # =============================================================================
 
+# Pin dimensions from DEF: ( -150 -500 ) ( 150 500 ) in nm
+PIN_WIDTH = 0.3    # 300nm = 0.3um
+PIN_HEIGHT = 1.0   # 1000nm = 1.0um
+
+# Pin center Y position (from DEF PLACED y-coordinate)
+PIN_Y = 111.02     # um from bottom
+
 PINS = [
-    # Control signals
+    # Control signals (x positions in um from DEF PLACED coordinates)
     ("clk", "INPUT", 143.98),
     ("ena", "INPUT", 146.74),
     ("rst_n", "INPUT", 141.22),
@@ -114,21 +131,22 @@ PINS = [
     ("uo_out[7]", "OUTPUT", 74.98),
 ]
 
-# Pin Y position (at top edge) and dimensions
-PIN_Y = 154.48  # um from bottom (0.5 um from top edge)
-PIN_WIDTH = 0.3  # um
-PIN_HEIGHT = 1.0  # um
+# Power pin definitions (on met4, positioned for proper power grid connection)
+# Requirements from precheck/pin_check.py:
+#   - Must be on layer "met4"
+#   - Width must be >= 1.2um
+#   - Must be within 10um of both top and bottom edges
+#   - Must be entirely within die area
+POWER_PIN_WIDTH = 1.5    # um (must be >= 1.2um)
+POWER_PIN_Y_START = 5.0  # um from bottom (within 10um of bottom edge)
+POWER_PIN_Y_END = DIE_HEIGHT_UM - 5.0  # um (within 10um of top edge)
+POWER_PIN_HEIGHT = POWER_PIN_Y_END - POWER_PIN_Y_START  # um
 
-# Power pin definitions (on met4, left edge as vertical stripes)
-# These are required by TinyTapeout for proper power grid connection
 POWER_PINS = [
-    # (name, use_type, x_position)
-    ("VGND", "GROUND", 1.0),
-    ("VPWR", "POWER", 3.0),
+    # (name, use_type, x_center_position)
+    ("VGND", "GROUND", 5.0),   # Left side
+    ("VPWR", "POWER", 8.0),    # Left side, next to VGND
 ]
-POWER_PIN_WIDTH = 1.0  # um
-POWER_PIN_HEIGHT = DIE_HEIGHT_UM - 2.0  # Nearly full height
-POWER_PIN_Y_CENTER = DIE_HEIGHT_UM / 2  # Centered vertically
 
 
 def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None, min_feature_size=0.14):
@@ -167,10 +185,10 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
     cell.add(boundary)
     
     # -------------------------------------------------------------------------
-    # 2. Add pin shapes on met4
+    # 2. Add signal pin shapes on met4.pin layer
     # -------------------------------------------------------------------------
     for pin_name, direction, x_pos in PINS:
-        # Pin rectangle
+        # Pin rectangle on met4.pin layer (71/16)
         pin_rect = gdstk.rectangle(
             (x_pos - PIN_WIDTH/2, PIN_Y - PIN_HEIGHT/2),
             (x_pos + PIN_WIDTH/2, PIN_Y + PIN_HEIGHT/2),
@@ -179,7 +197,7 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
         )
         cell.add(pin_rect)
         
-        # Pin label
+        # Pin label on met4.label layer (71/5)
         label = gdstk.Label(
             pin_name,
             (x_pos, PIN_Y),
@@ -189,13 +207,14 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 2b. Add power pins (VGND, VPWR) on met4
+    # 2b. Add power pins (VGND, VPWR) on met4.pin layer
+    # These must span nearly the full height, within 10um of top and bottom
     # -------------------------------------------------------------------------
     for pin_name, use_type, x_pos in POWER_PINS:
-        # Power pin rectangle (vertical stripe on left edge)
+        # Power pin rectangle (vertical stripe)
         power_rect = gdstk.rectangle(
-            (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_CENTER - POWER_PIN_HEIGHT/2),
-            (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_CENTER + POWER_PIN_HEIGHT/2),
+            (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
+            (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
             layer=PIN_LAYER,
             datatype=PIN_DATATYPE
         )
@@ -204,20 +223,25 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
         # Power pin label
         label = gdstk.Label(
             pin_name,
-            (x_pos, POWER_PIN_Y_CENTER),
+            (x_pos, (POWER_PIN_Y_START + POWER_PIN_Y_END) / 2),
             layer=LABEL_LAYER,
             texttype=LABEL_DATATYPE
         )
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 3. Add text art on met1 (most visible layer)
+    # 3. Add text art on met1.drawing layer (most visible layer)
     # -------------------------------------------------------------------------
     
     # Calculate text area (leave margins from edges and pins)
-    margin = 8.0  # um from edges
-    text_area_width = DIE_WIDTH_UM - 2 * margin
-    text_area_height = DIE_HEIGHT_UM - 2 * margin - 10  # Extra margin from top for pins
+    # Power pins are on the left (~10um), signal pins at top (~5um from top)
+    margin_left = 15.0    # Leave room for power pins on left
+    margin_right = 5.0
+    margin_bottom = 5.0
+    margin_top = 10.0     # Leave room for signal pins at top
+    
+    text_area_width = DIE_WIDTH_UM - margin_left - margin_right
+    text_area_height = DIE_HEIGHT_UM - margin_top - margin_bottom
     
     # Calculate optimal font size if not specified
     lines = text.split('\n')
@@ -235,7 +259,7 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
         
         font_size = min(width_per_char, height_per_line) * 0.85
         font_size = max(font_size, 0.5)   # Absolute minimum (DRC limit ~0.4 µm)
-        font_size = min(font_size, 25.0)  # Maximum 25um
+        font_size = min(font_size, 20.0)  # Maximum 20um for smaller die
     
     # Calculate stroke width (gdstk text stroke is ~font_size * 9/32)
     stroke_width = font_size * 9 / 32
@@ -281,9 +305,9 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
         print("Warning: No points in text polygons!")
         return None
     
-    # Center text in the available area (lower part of die, away from pins)
-    center_x = DIE_WIDTH_UM / 2
-    center_y = (DIE_HEIGHT_UM - 15) / 2  # Shift down to avoid pin area
+    # Center text in the available area (avoiding power pins on left and signal pins at top)
+    center_x = margin_left + text_area_width / 2
+    center_y = margin_bottom + text_area_height / 2
     
     offset_x = center_x - text_width / 2 - text_min_x
     offset_y = center_y - text_height / 2 - text_min_y
@@ -297,23 +321,26 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
     print(f"Text position: ({offset_x:.2f}, {offset_y:.2f})")
     
     # -------------------------------------------------------------------------
-    # 4. Add decorative border on met1
+    # 4. Add decorative border on met1.drawing (optional, for aesthetics)
     # -------------------------------------------------------------------------
-    border_width = 2.0
-    border_margin = 5.0
+    border_width = 1.5
+    border_margin_left = 12.0  # Leave room for power pins
+    border_margin_right = 3.0
+    border_margin_bottom = 3.0
+    border_margin_top = 8.0    # Leave room for signal pins
     
     # Outer border
     outer = gdstk.rectangle(
-        (border_margin, border_margin),
-        (DIE_WIDTH_UM - border_margin, DIE_HEIGHT_UM - border_margin - 8),  # Stay away from pins
+        (border_margin_left, border_margin_bottom),
+        (DIE_WIDTH_UM - border_margin_right, DIE_HEIGHT_UM - border_margin_top),
         layer=TEXT_LAYER,
         datatype=TEXT_DATATYPE
     )
     
     # Inner cutout
     inner = gdstk.rectangle(
-        (border_margin + border_width, border_margin + border_width),
-        (DIE_WIDTH_UM - border_margin - border_width, DIE_HEIGHT_UM - border_margin - 8 - border_width)
+        (border_margin_left + border_width, border_margin_bottom + border_width),
+        (DIE_WIDTH_UM - border_margin_right - border_width, DIE_HEIGHT_UM - border_margin_top - border_width)
     )
     
     # Create border by boolean difference
@@ -356,7 +383,16 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
 
 
 def generate_lef():
-    """Generate LEF file for the macro."""
+    """
+    Generate LEF file for the macro.
+    
+    The LEF file must match the template DEF pin positions exactly.
+    Pin rectangles in LEF are specified as RECT llx lly urx ury (lower-left to upper-right).
+    
+    From DEF file:
+    - Signal pins: LAYER met4 ( -150 -500 ) ( 150 500 ) at PLACED (x, 111020) N
+      This means rectangle from (x-0.15, 110.52) to (x+0.15, 111.52) um
+    """
     
     lef = f"""VERSION 5.8 ;
 BUSBITCHARS "[]" ;
@@ -371,6 +407,7 @@ MACRO {TOP_MODULE}
 """
     
     # Add power pin definitions (VGND, VPWR)
+    # Power pins must be on met4 with width >= 1.2um and span nearly full height
     for pin_name, use_type, x_pos in POWER_PINS:
         lef += f"""
   PIN {pin_name}
@@ -378,20 +415,29 @@ MACRO {TOP_MODULE}
     USE {use_type} ;
     PORT
       LAYER met4 ;
-        RECT {x_pos - POWER_PIN_WIDTH/2:.3f} {POWER_PIN_Y_CENTER - POWER_PIN_HEIGHT/2:.3f} {x_pos + POWER_PIN_WIDTH/2:.3f} {POWER_PIN_Y_CENTER + POWER_PIN_HEIGHT/2:.3f} ;
+        RECT {x_pos - POWER_PIN_WIDTH/2:.3f} {POWER_PIN_Y_START:.3f} {x_pos + POWER_PIN_WIDTH/2:.3f} {POWER_PIN_Y_END:.3f} ;
     END
   END {pin_name}
 """
     
     # Add signal pin definitions
+    # Pin positions must match the template DEF exactly
+    # DEF has pins at y=111.02 with rectangle (-0.15, -0.5) to (0.15, 0.5)
+    # So actual rectangle is (x-0.15, 110.52) to (x+0.15, 111.52)
     for pin_name, direction, x_pos in PINS:
+        # Calculate exact rectangle bounds
+        llx = x_pos - PIN_WIDTH/2   # lower left x
+        lly = PIN_Y - PIN_HEIGHT/2  # lower left y (110.52)
+        urx = x_pos + PIN_WIDTH/2   # upper right x
+        ury = PIN_Y + PIN_HEIGHT/2  # upper right y (111.52)
+        
         lef += f"""
   PIN {pin_name}
     DIRECTION {direction} ;
     USE SIGNAL ;
     PORT
       LAYER met4 ;
-        RECT {x_pos - PIN_WIDTH/2:.3f} {PIN_Y - PIN_HEIGHT/2:.3f} {x_pos + PIN_WIDTH/2:.3f} {PIN_Y + PIN_HEIGHT/2:.3f} ;
+        RECT {llx:.3f} {lly:.3f} {urx:.3f} {ury:.3f} ;
     END
   END {pin_name}
 """
@@ -505,16 +551,17 @@ def main():
         description='Create TinyTapeout silicon art GDS',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Font Size Guide:
-  25 µm  - Large text, ~10 chars, easy to read at 50x
-  10 µm  - Medium text, ~60 chars, readable at 50x  
-   5 µm  - Small text, ~250 chars, needs 100x microscope
-   3 µm  - Tiny text, ~680 chars, needs 200x microscope
-   2 µm  - Very tiny, ~1500 chars, needs 500x microscope
-   1 µm  - Microscopic, ~6000 chars, needs SEM or 1000x
- 0.5 µm  - Near DRC limit, ~24000 chars, SEM only
+Font Size Guide (for TT10 1x1 tile: 161 x 111.5 µm):
+  20 µm  - Large text, ~6 chars, easy to read at 50x
+  10 µm  - Medium text, ~40 chars, readable at 50x  
+   5 µm  - Small text, ~160 chars, needs 100x microscope
+   3 µm  - Tiny text, ~450 chars, needs 200x microscope
+   2 µm  - Very tiny, ~1000 chars, needs 500x microscope
+   1 µm  - Microscopic, ~4000 chars, needs SEM or 1000x
+ 0.5 µm  - Near DRC limit, ~16000 chars, SEM only
 
 Sky130 minimum feature size: 0.14 µm (met1)
+TinyTapeout TT10 1x1 tile: 161.0 x 111.52 µm
         """
     )
     parser.add_argument('--text', '-t', default='HELLO\nWORLD',
@@ -530,7 +577,7 @@ Sky130 minimum feature size: 0.14 µm (met1)
     text = args.text.replace('\\n', '\n')
     
     print(f"Creating silicon art with text: {repr(text)}")
-    print(f"Die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm")
+    print(f"TinyTapeout TT10 die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm")
     print(f"Output directory: {args.output}")
     print()
     
@@ -539,7 +586,7 @@ Sky130 minimum feature size: 0.14 µm (met1)
     if gds_path:
         print()
         print("=" * 60)
-        print("SUCCESS! Files created:")
+        print("SUCCESS! Files created for TinyTapeout TT10:")
         print(f"  - {args.output}/{TOP_MODULE}.gds")
         print(f"  - {args.output}/{TOP_MODULE}.lef")
         print(f"  - {args.output}/{TOP_MODULE}.v")
