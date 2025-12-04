@@ -29,9 +29,9 @@ except ImportError:
 # TinyTapeout 1x1 Tile Specifications
 # =============================================================================
 
-# Die dimensions in micrometers
-DIE_WIDTH_UM = 161.0
-DIE_HEIGHT_UM = 111.52
+# Die dimensions in micrometers (TinyTapeout 1x1 tile)
+DIE_WIDTH_UM = 202.08
+DIE_HEIGHT_UM = 154.98
 
 # Pin layer (met4)
 PIN_LAYER = 71
@@ -115,7 +115,7 @@ PINS = [
 ]
 
 # Pin Y position (at top edge) and dimensions
-PIN_Y = 111.02  # um from bottom
+PIN_Y = 154.48  # um from bottom (0.5 um from top edge)
 PIN_WIDTH = 0.3  # um
 PIN_HEIGHT = 1.0  # um
 
