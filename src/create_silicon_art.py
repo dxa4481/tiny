@@ -391,7 +391,7 @@ def generate_lef():
     Pin rectangles in LEF are specified as RECT llx lly urx ury (lower-left to upper-right).
     
     From DEF file:
-    - Signal pins: LAYER met4 ( -150 -500 ) ( 150 500 ) at PLACED (x, 111020) N
+    - Signal pins: LAYER Metal4 ( -150 -500 ) ( 150 500 ) at PLACED (x, 111020) N
       This means rectangle from (x-0.15, 110.52) to (x+0.15, 111.52) um
     """
     
@@ -415,7 +415,7 @@ MACRO {TOP_MODULE}
     DIRECTION INOUT ;
     USE {use_type} ;
     PORT
-      LAYER met4 ;
+      LAYER Metal4 ;
         RECT {x_pos - POWER_PIN_WIDTH/2:.3f} {POWER_PIN_Y_START:.3f} {x_pos + POWER_PIN_WIDTH/2:.3f} {POWER_PIN_Y_END:.3f} ;
     END
   END {pin_name}
@@ -437,7 +437,7 @@ MACRO {TOP_MODULE}
     DIRECTION {direction} ;
     USE SIGNAL ;
     PORT
-      LAYER met4 ;
+      LAYER Metal4 ;
         RECT {llx:.3f} {lly:.3f} {urx:.3f} {ury:.3f} ;
     END
   END {pin_name}
