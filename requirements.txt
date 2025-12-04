@@ -8,3 +8,4 @@ gdstk>=0.9.0
 
 # For testing
 cocotb>=1.8.0
+pytest>=8.0.0
