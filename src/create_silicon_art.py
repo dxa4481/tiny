@@ -35,9 +35,9 @@ except ImportError:
 # =============================================================================
 
 # Die dimensions in micrometers (from DIEAREA in DEF)
-# DIEAREA ( 0 0 ) ( 161000 111520 ) → 161.0 x 111.52 µm
-DIE_WIDTH_UM = 161.0
-DIE_HEIGHT_UM = 111.52
+# TinyTapeout 1x1 tile: 202.08 x 154.98 µm
+DIE_WIDTH_UM = 202.08
+DIE_HEIGHT_UM = 154.98
 
 # Pin dimensions from DEF: ( -150 -500 ) ( 150 500 ) in nm = 0.3µm x 1.0µm
 PIN_WIDTH = 0.3
