@@ -8,7 +8,7 @@
 
 This project demonstrates how to create **silicon art** using [TinyTapeout](https://tinytapeout.com/) - putting text, characters, or even entire books onto a silicon wafer that can be viewed under a microscope.
 
-![Hello World Preview](docs/hello_world_preview.svg)
+![Canary Token Preview](docs/canary_token_preview.svg)
 
 ### What You'll Get
 

@@ -1,9 +1,9 @@
 # Tiny Tapeout Silicon Art Project
 project:
-  title:        "Silicon Art - Hello World"
+  title:        "Silicon Art - Canary Token"
   author:       "Your Name"
   discord:      ""
-  description:  "Text art on silicon - HELLO WORLD visible under microscope"
+  description:  "Canary token etched on silicon - visible under microscope"
   language:     "Custom GDS"
   clock_hz:     0       # Not a clocked design
 
