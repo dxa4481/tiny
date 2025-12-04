@@ -120,13 +120,20 @@ PIN_WIDTH = 0.3  # um
 PIN_HEIGHT = 1.0  # um
 
 
-def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds"):
+def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None, min_feature_size=0.14):
     """
     Create a complete TinyTapeout-compatible GDS with text art.
     
     Args:
         text: Text to render on the chip
         output_dir: Directory for output files
+        font_size: Font size in µm (None = auto-calculate to fit)
+        min_feature_size: Minimum feature size in µm (Sky130 met1 = 0.14 µm)
+    
+    Sky130 Design Rules (for reference):
+        - met1 min width: 0.14 µm
+        - met1 min spacing: 0.14 µm
+        - Recommended for visibility: ≥1 µm features (optical microscope)
     """
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
@@ -179,7 +186,7 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds"):
     text_area_width = DIE_WIDTH_UM - 2 * margin
     text_area_height = DIE_HEIGHT_UM - 2 * margin - 10  # Extra margin from top for pins
     
-    # Calculate optimal font size
+    # Calculate optimal font size if not specified
     lines = text.split('\n')
     max_line_len = max(len(line) for line in lines)
     num_lines = len(lines)
@@ -188,15 +195,29 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds"):
     char_width_ratio = 9/16
     line_height_ratio = 5/4
     
-    # Calculate font size to fit
-    width_per_char = text_area_width / (max_line_len * char_width_ratio) if max_line_len > 0 else 20
-    height_per_line = text_area_height / (1 + (num_lines - 1) * line_height_ratio) if num_lines > 0 else 20
+    if font_size is None:
+        # Auto-calculate font size to fit
+        width_per_char = text_area_width / (max_line_len * char_width_ratio) if max_line_len > 0 else 20
+        height_per_line = text_area_height / (1 + (num_lines - 1) * line_height_ratio) if num_lines > 0 else 20
+        
+        font_size = min(width_per_char, height_per_line) * 0.85
+        font_size = max(font_size, 0.5)   # Absolute minimum (DRC limit ~0.4 µm)
+        font_size = min(font_size, 25.0)  # Maximum 25um
     
-    font_size = min(width_per_char, height_per_line) * 0.85
-    font_size = max(font_size, 3.0)  # Minimum 3um for visibility
-    font_size = min(font_size, 25.0)  # Maximum 25um
+    # Calculate stroke width (gdstk text stroke is ~font_size * 9/32)
+    stroke_width = font_size * 9 / 32
     
-    print(f"Using font size: {font_size:.2f} um")
+    print(f"Using font size: {font_size:.2f} µm")
+    print(f"Estimated stroke width: {stroke_width:.2f} µm")
+    
+    # Warn about DRC and visibility
+    if stroke_width < min_feature_size:
+        print(f"⚠ WARNING: Stroke width ({stroke_width:.2f} µm) is below Sky130 minimum ({min_feature_size} µm)!")
+        print(f"           This may cause DRC errors or fabrication issues.")
+    elif stroke_width < 1.0:
+        print(f"ℹ NOTE: Features are very small. Will need high magnification (500x+) or SEM to view.")
+    elif stroke_width < 3.0:
+        print(f"ℹ NOTE: Features will need ~200x magnification to read clearly.")
     
     # Generate text polygons
     text_polys = gdstk.text(
@@ -431,12 +452,27 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(
-        description='Create TinyTapeout silicon art GDS'
+        description='Create TinyTapeout silicon art GDS',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Font Size Guide:
+  25 µm  - Large text, ~10 chars, easy to read at 50x
+  10 µm  - Medium text, ~60 chars, readable at 50x  
+   5 µm  - Small text, ~250 chars, needs 100x microscope
+   3 µm  - Tiny text, ~680 chars, needs 200x microscope
+   2 µm  - Very tiny, ~1500 chars, needs 500x microscope
+   1 µm  - Microscopic, ~6000 chars, needs SEM or 1000x
+ 0.5 µm  - Near DRC limit, ~24000 chars, SEM only
+
+Sky130 minimum feature size: 0.14 µm (met1)
+        """
     )
     parser.add_argument('--text', '-t', default='HELLO\nWORLD',
                        help='Text to render (use \\n for newlines)')
     parser.add_argument('--output', '-o', default='gds',
                        help='Output directory')
+    parser.add_argument('--font-size', '-s', type=float, default=None,
+                       help='Font size in µm (default: auto-fit to tile)')
     
     args = parser.parse_args()
     
@@ -444,11 +480,11 @@ def main():
     text = args.text.replace('\\n', '\n')
     
     print(f"Creating silicon art with text: {repr(text)}")
-    print(f"Die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} um")
+    print(f"Die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm")
     print(f"Output directory: {args.output}")
     print()
     
-    gds_path = create_silicon_art_gds(text, args.output)
+    gds_path = create_silicon_art_gds(text, args.output, font_size=args.font_size)
     
     if gds_path:
         print()
