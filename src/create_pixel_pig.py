@@ -6,11 +6,14 @@ Creates a pixel art pig using multiple silicon layers for different colors.
 Each color maps to a different metal layer, creating a multi-layer artwork
 visible under different conditions/illumination.
 
+Pixel data extracted from "pixel_pig (4).png" image.
+
 Layer Mapping (for visualization and microscopy):
-    - Light pink (body)    → met1 (layer 68) 
-    - Dark pink (details)  → met2 (layer 69)
-    - Black (eyes)         → li1  (layer 67)
-    - Golden (key)         → met3 (layer 70)
+    - Light pink (body)    → met1 (layer 68)  - RGB(221, 142, 136)
+    - Dark pink (details)  → met2 (layer 69)  - RGB(153, 90, 86)
+    - Medium pink (snout)  → poly (layer 66)  - RGB(200, 109, 102)
+    - Golden (key)         → met3 (layer 70)  - RGB(174, 140, 87)
+    - Black (eyes)         → li1  (layer 67)  - RGB(30, 30, 30)
 
 Usage:
     python create_pixel_pig.py
@@ -39,11 +42,13 @@ TOP_MODULE = "tt_um_silicon_art"
 # Layer Definitions (Sky130 PDK)
 # =============================================================================
 
+# 5 colors from the image mapped to different silicon layers
 LAYERS = {
-    'light_pink': {'layer': 68, 'datatype': 20, 'name': 'met1'},   # Body
-    'dark_pink':  {'layer': 69, 'datatype': 20, 'name': 'met2'},   # Details/ears
-    'black':      {'layer': 67, 'datatype': 20, 'name': 'li1'},    # Eyes
-    'golden':     {'layer': 70, 'datatype': 20, 'name': 'met3'},   # Key
+    'light_pink':  {'layer': 68, 'datatype': 20, 'name': 'met1', 'rgb': (221, 142, 136)},   # Body
+    'dark_pink':   {'layer': 69, 'datatype': 20, 'name': 'met2', 'rgb': (153, 90, 86)},    # Details/ears
+    'medium_pink': {'layer': 66, 'datatype': 20, 'name': 'poly', 'rgb': (200, 109, 102)},  # Snout details
+    'golden':      {'layer': 70, 'datatype': 20, 'name': 'met3', 'rgb': (174, 140, 87)},   # Key
+    'black':       {'layer': 67, 'datatype': 20, 'name': 'li1',  'rgb': (30, 30, 30)},     # Eyes
 }
 
 # Pin layer (met4)
@@ -122,103 +127,77 @@ POWER_PIN_Y_CENTER = DIE_HEIGHT_UM / 2
 
 
 # =============================================================================
-# Pixel Art Definition
+# Pixel Art Definition - Extracted from "pixel_pig (4).png"
 # =============================================================================
 
-# Pixel art is defined as a grid where each cell contains a color code:
-# '.' = empty (no pixel)
-# 'L' = light pink (body)
-# 'D' = dark pink (details, ears, hooves)
-# 'B' = black (eyes)
-# 'G' = golden (key)
+# Grid size: 19 x 12 art pixels
+# Pixel positions (x, y) with origin at bottom-left
 
-# The pig sprite - carefully recreated from the reference image
-# Origin is bottom-left, positive Y goes up  
-# The pig faces left with snout on left, ears at top, tail on right
-PIG_PIXELS = [
-    # Row 0 (bottom) - hooves
-    "......DD........DD........",
-    # Row 1 - lower legs
-    "......DD........DD........",
-    # Row 2 - legs
-    "......LL........LL........",
-    # Row 3 - legs
-    "......LL........LL........",
-    # Row 4 - legs/lower body
-    "......LL........LL........",
-    # Row 5 - lower body connection
-    "....LLLLLLLLLLLLLLLL......",
-    # Row 6 - body start
-    "....LLLLLLLLLLLLLLLLLL....",
-    # Row 7 - body
-    "..LLLLLLLLLLLLLLLLLLLLLL..",
-    # Row 8 - body with tail curling
-    "..LLLLLLLLLLLLLLLLLLLLLLDD",
-    # Row 9 - main body with tail
-    "LLLLLLLLLLLLLLLLLLLLLL..DD",
-    # Row 10 - body with cheek shade
-    "LLLLLLLLLLLLLLLLLLLLLLDD..",
-    # Row 11 - snout with nostrils
-    "LLLLDDDDLLLLLLLLLLLLLLLL..",
-    # Row 12 - snout detail
-    "LLDDLLLLDDLLLLLLLLLLLLLL..",
-    # Row 13 - face with eyes
-    "LLLLLLLLLLLLBBLLLLBBLLDD..",
-    # Row 14 - upper face
-    "..LLLLLLLLLLLLLLLLLLLLDD..",
-    # Row 15 - head top
-    "....LLLLLLLLLLLLLLLLLL....",
-    # Row 16 - below ears
-    "......LLLLLLLLLLLLLL......",
-    # Row 17 - ear connection
-    "....DDLLLLLLLLLLLLLLDD....",
-    # Row 18 - ears
-    "..DDDDLL..LLLLLLLL..LLDDDD",
-    # Row 19 (top) - ear tips
-    "..DD......LLLLLLLL......DD",
+# DARK_PINK - RGB(153, 90, 86) - Ears and body details
+# Layer: met2 (69:20)
+DARK_PINK_PIXELS = [
+    (10, 0), (13, 0), (16, 0),
+    (9, 1), (10, 1), (11, 1), (12, 1), (13, 1), (15, 1), (16, 1),
+    (16, 2), (18, 2),
+    (8, 3), (10, 3), (17, 3),
+    (16, 4),
+    (9, 5), (16, 5),
+    (9, 6), (14, 6), (15, 6),
+    (9, 7), (10, 7), (11, 7), (12, 7), (13, 7), (14, 7),
+    (9, 8), (14, 8),
 ]
 
-# Key sprite (to the left of pig) - old-fashioned key design
-# Bow (loop) at top, shaft with teeth
-KEY_PIXELS = [
-    # Row 0 (bottom) - bottom of shaft
-    "..GG..",
-    # Row 1
-    "..GG..",
-    # Row 2 - tooth
-    ".GGG..",
-    # Row 3
-    "..GG..",
-    # Row 4 - tooth
-    ".GGG..",
-    # Row 5
-    "..GG..",
-    # Row 6
-    "..GG..",
-    # Row 7 - start of bow
-    ".GGGG.",
-    # Row 8
-    "GG..GG",
-    # Row 9
-    "GG..GG",
-    # Row 10
-    "GG..GG",
-    # Row 11
-    ".GGGG.",
-    # Row 12 - bow inner
-    ".G..G.",
-    # Row 13 (top)
-    ".GGGG.",
+# LIGHT_PINK - RGB(221, 142, 136) - Main body
+# Layer: met1 (68:20)
+LIGHT_PINK_PIXELS = [
+    (11, 0), (14, 0),
+    (14, 1),
+    (12, 2), (13, 2), (14, 2), (15, 2),
+    (12, 3), (13, 3), (14, 3), (15, 3), (16, 3),
+    (12, 4), (13, 4), (14, 4), (15, 4),
+    (11, 5), (12, 5), (14, 5), (15, 5),
+    (10, 6), (11, 6), (12, 6), (13, 6),
 ]
 
+# MEDIUM_PINK - RGB(200, 109, 102) - Snout/nose details
+# Layer: poly (66:20)
+MEDIUM_PINK_PIXELS = [
+    (8, 2), (9, 2), (10, 2), (11, 2),
+    (9, 3), (11, 3),
+    (8, 4), (9, 4), (10, 4), (11, 4),
+]
 
-def create_pixel_art_gds(output_dir="gds", pixel_size=5.0):
+# GOLDEN - RGB(174, 140, 87) - Key
+# Layer: met3 (70:20)
+GOLDEN_PIXELS = [
+    (3, 4), (4, 4), (5, 4),
+    (2, 5), (6, 5),
+    (2, 6), (6, 6),
+    (3, 7), (4, 7), (5, 7),
+    (4, 8),
+    (4, 9), (5, 9),
+    (4, 10),
+    (4, 11), (5, 11),
+]
+
+# BLACK - RGB(30, 30, 30) - Eyes
+# Layer: li1 (67:20)
+BLACK_PIXELS = [
+    (10, 5), (13, 5),
+]
+
+# Grid dimensions from image analysis
+GRID_WIDTH = 19
+GRID_HEIGHT = 12
+
+
+def create_pixel_art_gds(output_dir="gds", pixel_size=None):
     """
     Create the pixel pig GDS file using multiple layers.
     
     Args:
         output_dir: Directory for output files
-        pixel_size: Size of each pixel in micrometers
+        pixel_size: Size of each pixel in micrometers (auto-calculated if None)
     """
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
@@ -279,24 +258,11 @@ def create_pixel_art_gds(output_dir="gds", pixel_size=5.0):
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 3. Calculate pixel art placement
+    # 3. Calculate pixel art placement using extracted grid dimensions
     # -------------------------------------------------------------------------
     
-    # Calculate pig dimensions
-    pig_height = len(PIG_PIXELS)
-    pig_width = max(len(row) for row in PIG_PIXELS)
-    
-    # Calculate key dimensions  
-    key_height = len(KEY_PIXELS)
-    key_width = max(len(row) for row in KEY_PIXELS)
-    
-    # Total art width (key + gap + pig)
-    gap_pixels = 3
-    total_width_pixels = key_width + gap_pixels + pig_width
-    total_height_pixels = max(pig_height, key_height)
-    
     # Calculate pixel size to fit in available area
-    # Leave margins: 8um from edges, 12um from top (for pins)
+    # Leave margins: 8um from edges, 15um from top (for pins)
     margin_x = 8.0
     margin_bottom = 8.0
     margin_top = 15.0  # Extra margin from pins
@@ -304,93 +270,68 @@ def create_pixel_art_gds(output_dir="gds", pixel_size=5.0):
     available_width = DIE_WIDTH_UM - 2 * margin_x
     available_height = DIE_HEIGHT_UM - margin_bottom - margin_top
     
-    # Calculate pixel size if not specified to fit
-    max_pixel_by_width = available_width / total_width_pixels
-    max_pixel_by_height = available_height / total_height_pixels
+    # Calculate pixel size to fit the grid
+    max_pixel_by_width = available_width / GRID_WIDTH
+    max_pixel_by_height = available_height / GRID_HEIGHT
     
-    auto_pixel_size = min(max_pixel_by_width, max_pixel_by_height) * 0.9
+    auto_pixel_size = min(max_pixel_by_width, max_pixel_by_height) * 0.95
     
     if pixel_size is None or pixel_size > auto_pixel_size:
         pixel_size = auto_pixel_size
     
     print(f"Pixel size: {pixel_size:.2f} µm")
-    print(f"Pig dimensions: {pig_width}x{pig_height} pixels = {pig_width*pixel_size:.1f}x{pig_height*pixel_size:.1f} µm")
-    print(f"Key dimensions: {key_width}x{key_height} pixels = {key_width*pixel_size:.1f}x{key_height*pixel_size:.1f} µm")
+    print(f"Grid dimensions: {GRID_WIDTH}x{GRID_HEIGHT} pixels = {GRID_WIDTH*pixel_size:.1f}x{GRID_HEIGHT*pixel_size:.1f} µm")
     
     # Calculate offsets to center the art
-    art_width = total_width_pixels * pixel_size
-    art_height = total_height_pixels * pixel_size
+    art_width = GRID_WIDTH * pixel_size
+    art_height = GRID_HEIGHT * pixel_size
     
     offset_x = (DIE_WIDTH_UM - art_width) / 2
     offset_y = margin_bottom + (available_height - art_height) / 2
     
-    # Color to layer mapping
-    color_map = {
-        'L': LAYERS['light_pink'],
-        'D': LAYERS['dark_pink'],
-        'B': LAYERS['black'],
-        'G': LAYERS['golden'],
-    }
+    # -------------------------------------------------------------------------
+    # 4. Add all pixels from extracted data
+    # -------------------------------------------------------------------------
     
-    pixel_count = {k: 0 for k in color_map}
+    # Map pixel arrays to their layer info
+    pixel_data = [
+        ('light_pink', LIGHT_PINK_PIXELS, LAYERS['light_pink']),
+        ('dark_pink', DARK_PINK_PIXELS, LAYERS['dark_pink']),
+        ('medium_pink', MEDIUM_PINK_PIXELS, LAYERS['medium_pink']),
+        ('golden', GOLDEN_PIXELS, LAYERS['golden']),
+        ('black', BLACK_PIXELS, LAYERS['black']),
+    ]
+    
+    pixel_count = {}
+    
+    for color_name, positions, layer_info in pixel_data:
+        pixel_count[color_name] = len(positions)
+        
+        for (gx, gy) in positions:
+            # Calculate pixel position
+            x = offset_x + gx * pixel_size
+            y = offset_y + gy * pixel_size
+            
+            # Create pixel rectangle
+            rect = gdstk.rectangle(
+                (x, y),
+                (x + pixel_size, y + pixel_size),
+                layer=layer_info['layer'],
+                datatype=layer_info['datatype']
+            )
+            cell.add(rect)
+    
+    print(f"\nPixel counts by color:")
+    total = 0
+    for color_name, positions, layer_info in pixel_data:
+        count = len(positions)
+        total += count
+        rgb = layer_info.get('rgb', (0, 0, 0))
+        print(f"  {color_name:12} ({layer_info['name']:4}): {count:3} pixels - RGB{rgb}")
+    print(f"  {'TOTAL':12}       : {total:3} pixels")
     
     # -------------------------------------------------------------------------
-    # 4. Add key pixels
-    # -------------------------------------------------------------------------
-    key_offset_x = offset_x
-    # Center key vertically relative to pig
-    key_offset_y = offset_y + (pig_height - key_height) * pixel_size / 2
-    
-    for row_idx, row in enumerate(KEY_PIXELS):
-        for col_idx, pixel in enumerate(row):
-            if pixel in color_map:
-                layer_info = color_map[pixel]
-                
-                # Calculate pixel position (row 0 is bottom)
-                x = key_offset_x + col_idx * pixel_size
-                y = key_offset_y + row_idx * pixel_size
-                
-                # Create pixel rectangle
-                rect = gdstk.rectangle(
-                    (x, y),
-                    (x + pixel_size, y + pixel_size),
-                    layer=layer_info['layer'],
-                    datatype=layer_info['datatype']
-                )
-                cell.add(rect)
-                pixel_count[pixel] += 1
-    
-    # -------------------------------------------------------------------------
-    # 5. Add pig pixels
-    # -------------------------------------------------------------------------
-    pig_offset_x = offset_x + (key_width + gap_pixels) * pixel_size
-    pig_offset_y = offset_y
-    
-    for row_idx, row in enumerate(PIG_PIXELS):
-        for col_idx, pixel in enumerate(row):
-            if pixel in color_map:
-                layer_info = color_map[pixel]
-                
-                x = pig_offset_x + col_idx * pixel_size
-                y = pig_offset_y + row_idx * pixel_size
-                
-                rect = gdstk.rectangle(
-                    (x, y),
-                    (x + pixel_size, y + pixel_size),
-                    layer=layer_info['layer'],
-                    datatype=layer_info['datatype']
-                )
-                cell.add(rect)
-                pixel_count[pixel] += 1
-    
-    print(f"\nPixel counts:")
-    for color, count in pixel_count.items():
-        if count > 0:
-            layer_info = color_map[color]
-            print(f"  {color} ({layer_info['name']}): {count} pixels")
-    
-    # -------------------------------------------------------------------------
-    # 6. Save GDS file
+    # 5. Save GDS file
     # -------------------------------------------------------------------------
     gds_path = output_path / f"{TOP_MODULE}.gds"
     lib.write_gds(gds_path)
@@ -507,7 +448,7 @@ endmodule
 
 
 def create_svg_preview(lib, output_path, width=800, height=600):
-    """Create an SVG preview of the GDS with accurate pixel art colors."""
+    """Create an SVG preview of the GDS with accurate pixel art colors from the image."""
     
     cell = lib.cells[0]
     bbox = cell.bounding_box()
@@ -525,14 +466,15 @@ def create_svg_preview(lib, output_path, width=800, height=600):
     scale = min((width - 2*padding) / cell_width,
                 (height - 2*padding) / cell_height)
     
-    # Layer colors matching the original pixel art colors
+    # Layer colors matching the EXACT colors from "pixel_pig (4).png"
     colors = {
-        68: '#E8A89E',  # met1 - Light pink (body)
-        69: '#A65B5B',  # met2 - Dark pink (details)
-        70: '#A68B4C',  # met3 - Golden (key)
-        67: '#1A1A1A',  # li1 - Black (eyes)
+        68: '#DD8E88',  # met1 - Light pink body - RGB(221, 142, 136)
+        69: '#995A56',  # met2 - Dark pink details - RGB(153, 90, 86)
+        66: '#C86D66',  # poly - Medium pink snout - RGB(200, 109, 102)
+        70: '#AE8C57',  # met3 - Golden key - RGB(174, 140, 87)
+        67: '#1E1E1E',  # li1 - Black eyes - RGB(30, 30, 30)
         71: '#666666',  # met4 - Gray (pins)
-        235: '#DDDDDD', # boundary - Light gray
+        235: '#EEEEEE', # boundary - Light gray
     }
     
     svg_parts = [
@@ -579,7 +521,7 @@ def create_svg_preview(lib, output_path, width=800, height=600):
         f'    TinyTapeout Pixel Pig - Multi-Layer Silicon Art',
         f'  </text>',
         f'  <text x="{width/2}" y="45" text-anchor="middle" class="subtitle">',
-        f'    met1: body | met2: details | met3: key | li1: eyes',
+        f'    met1: body | met2: details | poly: snout | met3: key | li1: eyes',
         f'  </text>',
         '</svg>'
     ])
@@ -605,6 +547,7 @@ def main():
     
     print("=" * 60)
     print("Pixel Pig Silicon Art Generator")
+    print("Extracted from: pixel_pig (4).png")
     print("=" * 60)
     print(f"Die size: {DIE_WIDTH_UM} x {DIE_HEIGHT_UM} µm")
     print(f"Output directory: {args.output}")
@@ -622,11 +565,12 @@ def main():
         print(f"  - {args.output}/preview.svg")
         print("=" * 60)
         print()
-        print("Layer Legend:")
-        print("  🟠 met1 (layer 68) - Light pink body")
-        print("  🟤 met2 (layer 69) - Dark pink details")
-        print("  🟡 met3 (layer 70) - Golden key")
-        print("  ⚫ li1  (layer 67) - Black eyes")
+        print("Layer Legend (5 colors from image):")
+        print("  🟠 met1 (layer 68) - Light pink body     RGB(221, 142, 136)")
+        print("  🟤 met2 (layer 69) - Dark pink details   RGB(153, 90, 86)")
+        print("  🔴 poly (layer 66) - Medium pink snout   RGB(200, 109, 102)")
+        print("  🟡 met3 (layer 70) - Golden key          RGB(174, 140, 87)")
+        print("  ⚫ li1  (layer 67) - Black eyes          RGB(30, 30, 30)")
 
 
 if __name__ == '__main__':
