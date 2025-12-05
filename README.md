@@ -405,3 +405,4 @@ Apache 2.0 - See [LICENSE](LICENSE)
 - [TinyTapeout](https://tinytapeout.com/) for making chip fabrication accessible
 - [Efabless](https://efabless.com/) and [Google](https://developers.google.com/silicon) for the Sky130 shuttle program
 - The open-source silicon community
+
