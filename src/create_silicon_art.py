@@ -48,21 +48,31 @@ PIN_HEIGHT = 1.0
 PIN_Y_CENTER = 154.48
 
 # GDS Layers for IHP-SG13G2
-# Using Metal1 for artwork (layer 8)
-PIN_LAYER = 36        # Metal4.drawing
-PIN_DATATYPE = 0
+# Layer numbers from: IHP-Open-PDK/ihp-sg13g2/libs.tech/klayout/tech/sg13g2.lyp
+
+# Signal pin layer (Metal4)
+PIN_LAYER = 50        # Metal4.pin
+PIN_DATATYPE = 2      # pin datatype
+
+# Power pin layer (TopMetal1 - required by TinyTapeout precheck)
+POWER_PIN_LAYER = 126      # TopMetal1.pin
+POWER_PIN_DATATYPE = 2     # pin datatype
 
 # Text layer (Metal1.drawing - most visible under microscope)
 TEXT_LAYER = 8  
 TEXT_DATATYPE = 0
 
-# Boundary/PR boundary layers
-BOUND_LAYER = 63      # prBndry
-BOUND_DATATYPE = 0
+# Boundary/PR boundary layers (prBoundary.boundary = 189/4)
+BOUND_LAYER = 189     # prBoundary
+BOUND_DATATYPE = 4    # boundary datatype
 
-# Label layer for pin names
-LABEL_LAYER = 36      # Metal4
-LABEL_DATATYPE = 25   # label
+# Label layer for pin names (Metal4.label = 50/1)
+LABEL_LAYER = 50      # Metal4
+LABEL_DATATYPE = 1    # label datatype
+
+# Power pin label layer (TopMetal1.label = 126/1)
+POWER_LABEL_LAYER = 126    # TopMetal1
+POWER_LABEL_DATATYPE = 1   # label datatype
 
 # Top module name
 TOP_MODULE = "tt_um_silicon_art"
@@ -198,22 +208,22 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 3. Add power pins on Metal4 layer
+    # 3. Add power pins on TopMetal1 layer (required by TinyTapeout precheck)
     # -------------------------------------------------------------------------
     for pin_name, use_type, x_pos in POWER_PINS:
         power_rect = gdstk.rectangle(
             (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
             (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
-            layer=PIN_LAYER,
-            datatype=PIN_DATATYPE
+            layer=POWER_PIN_LAYER,
+            datatype=POWER_PIN_DATATYPE
         )
         cell.add(power_rect)
         
         label = gdstk.Label(
             pin_name,
             (x_pos, (POWER_PIN_Y_START + POWER_PIN_Y_END) / 2),
-            layer=LABEL_LAYER,
-            texttype=LABEL_DATATYPE
+            layer=POWER_LABEL_LAYER,
+            texttype=POWER_LABEL_DATATYPE
         )
         cell.add(label)
     
@@ -348,7 +358,7 @@ MACRO {TOP_MODULE}
   SYMMETRY X Y ;
 """
     
-    # Power pins - must use "Metal4" (capital M) for IHP
+    # Power pins - must use "TopMetal1" for IHP (required by precheck)
     for pin_name, use_type, x_pos in POWER_PINS:
         llx = x_pos - POWER_PIN_WIDTH/2
         urx = x_pos + POWER_PIN_WIDTH/2
@@ -357,7 +367,7 @@ MACRO {TOP_MODULE}
     DIRECTION INOUT ;
     USE {use_type} ;
     PORT
-      LAYER Metal4 ;
+      LAYER TopMetal1 ;
         RECT {llx:.3f} {POWER_PIN_Y_START:.3f} {urx:.3f} {POWER_PIN_Y_END:.3f} ;
     END
   END {pin_name}
@@ -439,7 +449,8 @@ def create_svg_preview(lib, output_path, width=800, height=600):
     padding = 20
     scale = min((width - 2*padding) / cell_width, (height - 2*padding) / cell_height)
     
-    colors = {8: '#4169E1', 36: '#FF6347', 63: '#CCCCCC'}
+    # IHP layer colors: Metal1=8, Metal4=50, TopMetal1=126, prBoundary=189
+    colors = {8: '#4169E1', 50: '#FF6347', 126: '#FFD700', 189: '#CCCCCC'}
     
     svg_parts = [
         f'<?xml version="1.0" encoding="UTF-8"?>',
@@ -451,7 +462,7 @@ def create_svg_preview(lib, output_path, width=800, height=600):
     for poly in cell.polygons:
         layer = poly.layer
         color = colors.get(layer, '#888888')
-        opacity = 0.3 if layer == 63 else 0.9
+        opacity = 0.3 if layer == 189 else 0.9
         points_str = ' '.join(f'{p[0]},{p[1]}' for p in poly.points)
         svg_parts.append(
             f'    <polygon points="{points_str}" fill="{color}" '

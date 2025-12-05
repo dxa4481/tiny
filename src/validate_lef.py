@@ -191,13 +191,18 @@ def validate_lef(lef_path):
     
     # Validate each pin
     for pin_name, pin_info in pins.items():
-        # Check layer - must be "Metal4" (capital M) for IHP
         if pin_info['layer'] is None:
             errors.append(f"Pin {pin_name} is missing LAYER definition")
-        elif pin_info['layer'] == "met4":
-            errors.append(f"Pin {pin_name} uses 'met4' - must be 'Metal4' (capital M) for IHP")
-        elif pin_info['layer'] not in ["Metal4", "Metal3", "Metal2", "Metal1"]:
-            warnings.append(f"Pin {pin_name} uses unusual layer: {pin_info['layer']}")
+        elif pin_name in ['VPWR', 'VGND']:
+            # Power pins must use TopMetal1 for IHP
+            if pin_info['layer'] != "TopMetal1":
+                errors.append(f"Power pin {pin_name} uses '{pin_info['layer']}' - must be 'TopMetal1' for IHP")
+        else:
+            # Signal pins must use Metal4 for IHP
+            if pin_info['layer'] == "met4":
+                errors.append(f"Pin {pin_name} uses 'met4' - must be 'Metal4' (capital M) for IHP")
+            elif pin_info['layer'] != "Metal4":
+                errors.append(f"Signal pin {pin_name} uses '{pin_info['layer']}' - must be 'Metal4' for IHP")
         
         if pin_info['rect'] is None:
             errors.append(f"Pin {pin_name} is missing RECT definition")
