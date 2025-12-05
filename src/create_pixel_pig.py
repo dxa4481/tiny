@@ -111,60 +111,64 @@ GRID_WIDTH = 19
 GRID_HEIGHT = 12
 
 # Density fill parameters
-FILL_SIZE = 2.5      # 2.5µm x 2.5µm fill squares (larger = more coverage)
+FILL_SIZE = 3.0      # 3µm x 3µm fill squares (larger = more coverage)
 FILL_SPACING = 0.5   # 0.5µm gap between fills (above 0.21µm min spacing)
-FILL_PITCH = FILL_SIZE + FILL_SPACING  # 3µm pitch
-ART_BUFFER = 8.0     # 8µm clearance around art for clear visibility
+FILL_PITCH = FILL_SIZE + FILL_SPACING  # 3.5µm pitch
+ART_BUFFER = 4.0     # 4µm clearance around art (balances visibility vs density)
 
 
-def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top):
+def get_art_exclusion_zone(cell, buffer_distance):
     """
-    Add density fill pattern to meet 35-60% metal coverage requirement.
-    
-    Creates a grid of fill squares, using precise polygon intersection to check
-    for overlaps (handles complex shapes like border frames correctly).
+    Create a unified exclusion zone from ALL art layers.
+    This ensures fill on any layer avoids art on ALL layers.
     """
     import gdstk
     
-    # Get existing geometry on this specific layer only
-    existing_polys = [p for p in cell.polygons 
-                      if p.layer == layer and p.datatype == datatype]
+    # Get art from all metal layers (Metal1, Metal2, Metal3)
+    art_layers = [(8, 0), (10, 0), (30, 0)]
+    all_art_polys = []
     
-    # Buffer distance for spacing from existing geometry
-    # Use larger buffer to keep fill away from art for better visibility
-    buffer_distance = ART_BUFFER
+    for layer, datatype in art_layers:
+        polys = [p for p in cell.polygons if p.layer == layer and p.datatype == datatype]
+        all_art_polys.extend(polys)
+    
+    if not all_art_polys:
+        return []
+    
+    # Offset each polygon by buffer distance
+    buffered_polys = []
+    for poly in all_art_polys:
+        try:
+            offsets = gdstk.offset(poly, buffer_distance, join="round", tolerance=0.1)
+            buffered_polys.extend(offsets)
+        except:
+            bbox = poly.bounding_box()
+            if bbox:
+                buffered_polys.append(gdstk.rectangle(
+                    (bbox[0][0] - buffer_distance, bbox[0][1] - buffer_distance),
+                    (bbox[1][0] + buffer_distance, bbox[1][1] + buffer_distance)
+                ))
+    
+    # Merge all buffered polygons into one exclusion zone
+    if buffered_polys:
+        return gdstk.boolean(buffered_polys, [], "or")
+    return []
+
+
+def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top, exclusion_zone):
+    """
+    Add density fill pattern to meet 35-60% metal coverage requirement.
+    
+    Uses a pre-computed exclusion zone that covers art on ALL layers,
+    so fill on any layer won't appear under art on other layers.
+    """
+    import gdstk
     
     # Calculate fill area (inside the border, avoid pin margins)
     fill_x_start = margin_left + 2
     fill_x_end = DIE_WIDTH_UM - margin_right - 2
-    fill_y_start = margin_bottom + 5  # Extra margin inside border
+    fill_y_start = margin_bottom + 5
     fill_y_end = DIE_HEIGHT_UM - margin_top - 2
-    
-    # Create a merged exclusion polygon from all existing geometry, buffered
-    if existing_polys:
-        # Offset each polygon by buffer distance
-        buffered_polys = []
-        for poly in existing_polys:
-            try:
-                # Use offset to create buffer zone around polygon
-                offsets = gdstk.offset(poly, buffer_distance, join="round", tolerance=0.1)
-                buffered_polys.extend(offsets)
-            except:
-                # Fallback: use bounding box
-                bbox = poly.bounding_box()
-                if bbox:
-                    buffered_polys.append(gdstk.rectangle(
-                        (bbox[0][0] - buffer_distance, bbox[0][1] - buffer_distance),
-                        (bbox[1][0] + buffer_distance, bbox[1][1] + buffer_distance)
-                    ))
-        
-        # Merge all buffered polygons
-        if buffered_polys:
-            exclusion = gdstk.boolean(buffered_polys, [], "or")
-        else:
-            exclusion = []
-    else:
-        exclusion = []
     
     # Generate grid of fill squares
     fill_count = 0
@@ -175,11 +179,11 @@ def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bo
             # Create candidate fill square
             fill_rect = gdstk.rectangle((x, y), (x + FILL_SIZE, y + FILL_SIZE))
             
-            # Check if it overlaps with exclusion zone
+            # Check if it overlaps with unified exclusion zone
             overlaps = False
-            if exclusion:
-                result = gdstk.boolean(fill_rect, exclusion, "and")
-                if result:  # Non-empty result means overlap
+            if exclusion_zone:
+                result = gdstk.boolean(fill_rect, exclusion_zone, "and")
+                if result:
                     overlaps = True
             
             if not overlaps:
@@ -427,6 +431,11 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     # -------------------------------------------------------------------------
     print()
     print("Adding density fill (IHP requires 35-60% metal coverage)...")
+    print(f"  Using {ART_BUFFER}µm exclusion zone around ALL art (unified across layers)")
+    
+    # Create unified exclusion zone from art on ALL layers
+    # This ensures fill on Metal2 won't appear under Metal1 art, etc.
+    exclusion_zone = get_art_exclusion_zone(cell, ART_BUFFER)
     
     fill_layers = [
         (8, 0, 'Metal1'),   # Metal1.drawing
@@ -435,7 +444,7 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     ]
     
     for layer, datatype, name in fill_layers:
-        count = add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top)
+        count = add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top, exclusion_zone)
         print(f"  {name}: added {count} fill squares ({count * FILL_SIZE**2:.0f} µm²)")
     
     # -------------------------------------------------------------------------
