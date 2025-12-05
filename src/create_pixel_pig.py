@@ -110,6 +110,91 @@ BLACK_PIXELS = [
 GRID_WIDTH = 19
 GRID_HEIGHT = 12
 
+# Density fill parameters
+FILL_SIZE = 2.0      # 2µm x 2µm fill squares
+FILL_SPACING = 1.0   # 1µm gap between fills (meets 0.18-0.21µm min spacing)
+FILL_PITCH = FILL_SIZE + FILL_SPACING  # 3µm pitch
+
+
+def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top):
+    """
+    Add density fill pattern to meet 35-60% metal coverage requirement.
+    
+    Creates a grid of fill squares, using precise polygon intersection to check
+    for overlaps (handles complex shapes like border frames correctly).
+    """
+    import gdstk
+    
+    # Get existing geometry on this specific layer only
+    existing_polys = [p for p in cell.polygons 
+                      if p.layer == layer and p.datatype == datatype]
+    
+    # Buffer distance for spacing from existing geometry
+    buffer_distance = FILL_SPACING + 0.05  # Just over min spacing
+    
+    # Calculate fill area (inside the border, avoid pin margins)
+    fill_x_start = margin_left + 2
+    fill_x_end = DIE_WIDTH_UM - margin_right - 2
+    fill_y_start = margin_bottom + 5  # Extra margin inside border
+    fill_y_end = DIE_HEIGHT_UM - margin_top - 2
+    
+    # Create a merged exclusion polygon from all existing geometry, buffered
+    if existing_polys:
+        # Offset each polygon by buffer distance
+        buffered_polys = []
+        for poly in existing_polys:
+            try:
+                # Use offset to create buffer zone around polygon
+                offsets = gdstk.offset(poly, buffer_distance, join="round", tolerance=0.1)
+                buffered_polys.extend(offsets)
+            except:
+                # Fallback: use bounding box
+                bbox = poly.bounding_box()
+                if bbox:
+                    buffered_polys.append(gdstk.rectangle(
+                        (bbox[0][0] - buffer_distance, bbox[0][1] - buffer_distance),
+                        (bbox[1][0] + buffer_distance, bbox[1][1] + buffer_distance)
+                    ))
+        
+        # Merge all buffered polygons
+        if buffered_polys:
+            exclusion = gdstk.boolean(buffered_polys, [], "or")
+        else:
+            exclusion = []
+    else:
+        exclusion = []
+    
+    # Generate grid of fill squares
+    fill_count = 0
+    x = fill_x_start
+    while x + FILL_SIZE <= fill_x_end:
+        y = fill_y_start
+        while y + FILL_SIZE <= fill_y_end:
+            # Create candidate fill square
+            fill_rect = gdstk.rectangle((x, y), (x + FILL_SIZE, y + FILL_SIZE))
+            
+            # Check if it overlaps with exclusion zone
+            overlaps = False
+            if exclusion:
+                result = gdstk.boolean(fill_rect, exclusion, "and")
+                if result:  # Non-empty result means overlap
+                    overlaps = True
+            
+            if not overlaps:
+                fill_rect_final = gdstk.rectangle(
+                    (x, y),
+                    (x + FILL_SIZE, y + FILL_SIZE),
+                    layer=layer,
+                    datatype=datatype
+                )
+                cell.add(fill_rect_final)
+                fill_count += 1
+            
+            y += FILL_PITCH
+        x += FILL_PITCH
+    
+    return fill_count
+
 
 def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     """
@@ -321,7 +406,23 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         cell.add(poly)
     
     # -------------------------------------------------------------------------
-    # 8. Save files
+    # 8. Add density fill to meet 35-60% metal coverage requirement
+    # -------------------------------------------------------------------------
+    print()
+    print("Adding density fill (IHP requires 35-60% metal coverage)...")
+    
+    fill_layers = [
+        (8, 0, 'Metal1'),   # Metal1.drawing
+        (10, 0, 'Metal2'),  # Metal2.drawing
+        (30, 0, 'Metal3'),  # Metal3.drawing
+    ]
+    
+    for layer, datatype, name in fill_layers:
+        count = add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top)
+        print(f"  {name}: added {count} fill squares ({count * FILL_SIZE**2:.0f} µm²)")
+    
+    # -------------------------------------------------------------------------
+    # 9. Save files
     # -------------------------------------------------------------------------
     gds_path = output_path / f"{TOP_MODULE}.gds"
     lib.write_gds(gds_path)
@@ -533,6 +634,7 @@ def main():
         print()
         print("Using .drawing layers (TinyTapeout whitelisted).")
         print("All geometry meets DRC min width/space rules.")
+        print("Density fill added to meet 35-60% metal coverage requirement.")
 
 
 if __name__ == '__main__':

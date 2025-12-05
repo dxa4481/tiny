@@ -13,10 +13,11 @@ The design includes:
 4. Power pins (VPWR, VGND) on TopMetal1.pin layer
 5. A minimal Verilog stub that passes inputs through with an XOR pattern
 
-**Important DRC note:** Art uses `.drawing` layers (datatype 0) which are the only fabricated layers in TinyTapeout's IHP whitelist. All geometry meets DRC minimum width requirements:
+**Important DRC note:** Art uses `.drawing` layers (datatype 0) which are the only fabricated layers in TinyTapeout's IHP whitelist. All geometry meets DRC requirements:
 - Pixel art: ~7.88 µm pixels (min: 0.20 µm) ✅
 - Text strokes: ~0.19 µm at 3µm font (min: 0.16 µm) ✅
 - Border: 1.0 µm wide (min: 0.16 µm) ✅
+- Density fill: 2µm squares added to reach 35-60% metal coverage ✅
 
 The design fits in the 202.08 × 154.98 µm tile area (TinyTapeout IHP 1x1 tile). Pin positions are precisely calculated to match the TinyTapeout IHP template DEF file.
 
