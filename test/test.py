@@ -8,7 +8,7 @@ from cocotb.triggers import ClockCycles
 
 @cocotb.test()
 async def test_silicon_art(dut):
-    """Test the silicon art XOR pass-through logic."""
+    """Test the silicon art design with outputs tied to ground."""
     
     dut._log.info("Starting silicon art test")
 
@@ -25,17 +25,17 @@ async def test_silicon_art(dut):
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
 
-    # Test the XOR pattern (input XOR 0xAA)
+    # Test that outputs are always grounded regardless of input
     test_values = [0x00, 0xFF, 0xAA, 0x55, 0x12, 0x34]
     
     for val in test_values:
         dut.ui_in.value = val
         await ClockCycles(dut.clk, 1)
         
-        expected = val ^ 0xAA
+        # All outputs should be grounded (0x00)
         actual = int(dut.uo_out.value)
         
-        dut._log.info(f"Input: 0x{val:02X}, Expected: 0x{expected:02X}, Got: 0x{actual:02X}")
-        assert actual == expected, f"Mismatch! Expected 0x{expected:02X}, got 0x{actual:02X}"
+        dut._log.info(f"Input: 0x{val:02X}, Output: 0x{actual:02X} (expected 0x00)")
+        assert actual == 0x00, f"Output should be grounded! Expected 0x00, got 0x{actual:02X}"
     
     dut._log.info("All tests passed!")

@@ -27,16 +27,14 @@ module tt_um_silicon_art (
     input  wire       rst_n     // Reset (active low)
 );
 
-    // Simple pass-through with XOR pattern
-    // This creates a minimal but valid design
-    // The XOR with 8'hAA creates a nice checkerboard pattern when viewed
-    assign uo_out = ui_in ^ 8'hAA;
+    // Connect all outputs to ground (minimal logic for silicon art)
+    assign uo_out = 8'b0;
     
     // Bidirectional pins configured as inputs (minimal logic)
     assign uio_out = 8'b0;
     assign uio_oe  = 8'b0;
 
     // List all unused inputs to prevent warnings
-    wire _unused = &{ena, clk, rst_n, uio_in, 1'b0};
+    wire _unused = &{ena, clk, rst_n, ui_in, uio_in, 1'b0};
 
 endmodule
