@@ -110,48 +110,57 @@ BLACK_PIXELS = [
 GRID_WIDTH = 19
 GRID_HEIGHT = 12
 
-# Density fill parameters
-FILL_SIZE = 3.0      # 3µm x 3µm fill squares (larger = more coverage)
-FILL_SPACING = 0.5   # 0.5µm gap between fills (above 0.21µm min spacing)
-FILL_PITCH = FILL_SIZE + FILL_SPACING  # 3.5µm pitch
-ART_BUFFER = 4.0     # 4µm clearance around art (balances visibility vs density)
+# Density fill parameters - maximized for high density
+FILL_SIZE = 4.5      # 4.5µm x 4.5µm fill squares
+FILL_SPACING = 0.25  # 0.25µm gap (just above 0.21µm min)
+FILL_PITCH = FILL_SIZE + FILL_SPACING  # 4.75µm pitch
+ART_BUFFER = 0.5     # 0.5µm clearance around art (very tight)
 
 
-def get_art_exclusion_zone(cell, buffer_distance):
+def get_art_exclusion_zone(cell, buffer_distance, pig_bounds, text_bounds):
     """
-    Create a unified exclusion zone from ALL art layers.
-    This ensures fill on any layer avoids art on ALL layers.
+    Create exclusion zones using BOUNDING BOXES around art regions.
+    This prevents fill from appearing in gaps between characters/pixels.
+    
+    Args:
+        cell: The GDS cell
+        buffer_distance: Buffer around art regions
+        pig_bounds: (x1, y1, x2, y2) bounding box of pig area
+        text_bounds: (x1, y1, x2, y2) bounding box of text area
     """
     import gdstk
     
-    # Get art from all metal layers (Metal1, Metal2, Metal3)
-    art_layers = [(8, 0), (10, 0), (30, 0)]
-    all_art_polys = []
+    exclusion_rects = []
     
-    for layer, datatype in art_layers:
-        polys = [p for p in cell.polygons if p.layer == layer and p.datatype == datatype]
-        all_art_polys.extend(polys)
+    # Pig exclusion zone (bounding box + buffer)
+    if pig_bounds:
+        x1, y1, x2, y2 = pig_bounds
+        exclusion_rects.append(gdstk.rectangle(
+            (x1 - buffer_distance, y1 - buffer_distance),
+            (x2 + buffer_distance, y2 + buffer_distance)
+        ))
     
-    if not all_art_polys:
-        return []
+    # Text exclusion zone (bounding box + buffer)  
+    if text_bounds:
+        x1, y1, x2, y2 = text_bounds
+        exclusion_rects.append(gdstk.rectangle(
+            (x1 - buffer_distance, y1 - buffer_distance),
+            (x2 + buffer_distance, y2 + buffer_distance)
+        ))
     
-    # Offset each polygon by buffer distance
-    buffered_polys = []
-    for poly in all_art_polys:
+    # Also exclude the border area (it's on Metal1)
+    # The border is a frame around the die
+    border_polys = [p for p in cell.polygons 
+                    if p.layer == 8 and p.datatype == 0 and p.area() > 100]
+    for poly in border_polys:
         try:
             offsets = gdstk.offset(poly, buffer_distance, join="round", tolerance=0.1)
-            buffered_polys.extend(offsets)
+            exclusion_rects.extend(offsets)
         except:
-            bbox = poly.bounding_box()
-            if bbox:
-                buffered_polys.append(gdstk.rectangle(
-                    (bbox[0][0] - buffer_distance, bbox[0][1] - buffer_distance),
-                    (bbox[1][0] + buffer_distance, bbox[1][1] + buffer_distance)
-                ))
+            pass
     
-    # Merge all buffered polygons into one exclusion zone
-    if buffered_polys:
-        return gdstk.boolean(buffered_polys, [], "or")
+    if exclusion_rects:
+        return gdstk.boolean(exclusion_rects, [], "or")
     return []
 
 
@@ -372,6 +381,12 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         datatype=TEXT_DATATYPE
     )
     
+    # Track text dimensions for exclusion zone
+    text_final_width = 0
+    text_final_height = 0
+    text_final_x = text_area_x
+    text_final_y = text_area_y
+    
     if text_polys:
         all_points = []
         for poly in text_polys:
@@ -380,8 +395,8 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         if all_points:
             xs = [p[0] for p in all_points]
             ys = [p[1] for p in all_points]
-            text_width = max(xs) - min(xs)
-            text_height = max(ys) - min(ys)
+            text_final_width = max(xs) - min(xs)
+            text_final_height = max(ys) - min(ys)
             text_min_x = min(xs)
             text_min_y = min(ys)
             
@@ -393,18 +408,20 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             offset_y = target_y - text_min_y
             
             # Check bounds and adjust if needed
-            if text_width > text_area_width:
-                print(f"  Warning: Text width {text_width:.1f} > area {text_area_width:.1f}")
-            if target_x + text_width > DIE_WIDTH_UM - margin_right:
-                offset_x = DIE_WIDTH_UM - margin_right - text_width - text_min_x - 2
-            if target_y + text_height > DIE_HEIGHT_UM - margin_top:
-                offset_y = DIE_HEIGHT_UM - margin_top - text_height - text_min_y - 2
+            if text_final_width > text_area_width:
+                print(f"  Warning: Text width {text_final_width:.1f} > area {text_area_width:.1f}")
+            if target_x + text_final_width > DIE_WIDTH_UM - margin_right:
+                offset_x = DIE_WIDTH_UM - margin_right - text_final_width - text_min_x - 2
+                text_final_x = target_x + offset_x + text_min_x
+            if target_y + text_final_height > DIE_HEIGHT_UM - margin_top:
+                offset_y = DIE_HEIGHT_UM - margin_top - text_final_height - text_min_y - 2
+                text_final_y = target_y + offset_y + text_min_y
             
             for poly in text_polys:
                 cell.add(poly.translate(offset_x, offset_y))
             
-            print(f"Text dimensions: {text_width:.1f} x {text_height:.1f} µm")
-            print(f"Text position: ({target_x:.1f}, {target_y:.1f})")
+            print(f"Text dimensions: {text_final_width:.1f} x {text_final_height:.1f} µm")
+            print(f"Text position: ({text_final_x:.1f}, {text_final_y:.1f})")
     
     # -------------------------------------------------------------------------
     # 7. Add decorative border (1µm wide - above 0.16µm DRC min)
@@ -431,11 +448,21 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     # -------------------------------------------------------------------------
     print()
     print("Adding density fill (IHP requires 35-60% metal coverage)...")
-    print(f"  Using {ART_BUFFER}µm exclusion zone around ALL art (unified across layers)")
+    print(f"  Using {ART_BUFFER}µm BOUNDING BOX exclusion (covers entire art regions)")
     
-    # Create unified exclusion zone from art on ALL layers
-    # This ensures fill on Metal2 won't appear under Metal1 art, etc.
-    exclusion_zone = get_art_exclusion_zone(cell, ART_BUFFER)
+    # Define art region bounding boxes (these exclude the ENTIRE region, not just individual polygons)
+    # This prevents fill from appearing in gaps between characters/pixels
+    pig_bounds = (pig_offset_x, pig_offset_y, pig_offset_x + pig_width, pig_offset_y + pig_height)
+    
+    # Text bounds (if text was added)
+    text_bounds = None
+    if text_final_width > 0:
+        text_bounds = (text_final_x, text_final_y, 
+                       text_final_x + text_final_width,
+                       text_final_y + text_final_height)
+    
+    # Create unified exclusion zone using bounding boxes
+    exclusion_zone = get_art_exclusion_zone(cell, ART_BUFFER, pig_bounds, text_bounds)
     
     fill_layers = [
         (8, 0, 'Metal1'),   # Metal1.drawing
