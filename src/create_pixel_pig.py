@@ -245,17 +245,80 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     print(f"Pig pixels: {total_pixels}")
     
     # -------------------------------------------------------------------------
-    # 6. Text DISABLED - causes DRC violations due to thin strokes
+    # 6. Add canary token text (re-enabled - strokes are ~1µm wide, above DRC min)
     # -------------------------------------------------------------------------
-    # NOTE: gdstk.text() creates thin stroke polygons that violate IHP DRC rules
-    # (min width 0.16-0.20µm). To include text, use pixel-based fonts instead.
-    print("Text: DISABLED (fine strokes cause DRC violations)")
+    # Calculate text area (right side of pig)
+    text_area_x = pig_offset_x + pig_width + 5.0  # 5µm gap after pig
+    text_area_width = DIE_WIDTH_UM - margin_right - text_area_x
+    
+    lines = text.split('\n')
+    max_line_len = max(len(line) for line in lines) if lines else 1
+    num_lines = len(lines)
+    
+    char_width_ratio = 9/16
+    line_height_ratio = 5/4
+    
+    if font_size is None:
+        width_per_char = text_area_width / (max_line_len * char_width_ratio) if max_line_len > 0 else 20
+        height_per_line = available_height / (1 + (num_lines - 1) * line_height_ratio) if num_lines > 0 else 20
+        font_size = min(width_per_char, height_per_line) * 0.85
+        font_size = max(font_size, 3.0)  # Minimum 3µm to ensure all features >= 0.16µm
+        font_size = min(font_size, 15.0)
+    
+    print(f"Text font size: {font_size:.2f} µm (stroke width ~{font_size * 0.375:.2f} µm)")
+    
+    text_polys = gdstk.text(
+        text, 
+        font_size, 
+        (0, 0),
+        layer=TEXT_LAYER,
+        datatype=TEXT_DATATYPE
+    )
+    
+    if text_polys:
+        all_points = []
+        for poly in text_polys:
+            all_points.extend(poly.points)
+        
+        if all_points:
+            xs = [p[0] for p in all_points]
+            ys = [p[1] for p in all_points]
+            text_width = max(xs) - min(xs)
+            text_height = max(ys) - min(ys)
+            text_min_x = min(xs)
+            text_min_y = min(ys)
+            
+            # Center text in its area
+            center_x = text_area_x + text_area_width / 2
+            center_y = margin_bottom + available_height / 2
+            
+            offset_x = center_x - text_width / 2 - text_min_x
+            offset_y = center_y - text_height / 2 - text_min_y
+            
+            for poly in text_polys:
+                cell.add(poly.translate(offset_x, offset_y))
+            
+            print(f"Text dimensions: {text_width:.1f} x {text_height:.1f} µm")
     
     # -------------------------------------------------------------------------
-    # 7. Border DISABLED - may cause DRC issues with thin edges
+    # 7. Add decorative border (1µm wide - above 0.16µm DRC min)
     # -------------------------------------------------------------------------
-    # NOTE: The 1µm border should be wide enough, but we're being conservative
-    # to minimize DRC violations. Can be re-enabled if pig alone passes.
+    border_width = 1.0  # 1µm is well above 0.16µm Metal1 min width
+    border_margin = 3.0
+    
+    outer = gdstk.rectangle(
+        (margin_left - 2, border_margin),
+        (DIE_WIDTH_UM - border_margin, DIE_HEIGHT_UM - margin_top + 2),
+        layer=TEXT_LAYER,
+        datatype=TEXT_DATATYPE
+    )
+    inner = gdstk.rectangle(
+        (margin_left - 2 + border_width, border_margin + border_width),
+        (DIE_WIDTH_UM - border_margin - border_width, DIE_HEIGHT_UM - margin_top + 2 - border_width)
+    )
+    border_polys = gdstk.boolean(outer, inner, "not", layer=TEXT_LAYER, datatype=TEXT_DATATYPE)
+    for poly in border_polys:
+        cell.add(poly)
     
     # -------------------------------------------------------------------------
     # 8. Save files
@@ -454,7 +517,7 @@ def main():
     if gds_path:
         print()
         print("=" * 65)
-        print("SUCCESS! Pixel pig design created:")
+        print("SUCCESS! Combined design created:")
         print(f"  - {args.output}/{TOP_MODULE}.gds")
         print(f"  - {args.output}/{TOP_MODULE}.lef")
         print(f"  - {args.output}/{TOP_MODULE}.v")
@@ -462,15 +525,14 @@ def main():
         print("=" * 65)
         print()
         print("Design contents:")
-        print("  🐷 Pixel Pig (centered) - on Metal.drawing layers")
-        print("  🔵 Metal1.drawing (8/0)  = pig body")
+        print("  🐷 Pixel Pig (left) - on Metal.drawing layers")
+        print("  📝 Canary Token (right) - on Metal1.drawing")
+        print("  🔵 Metal1.drawing (8/0)  = text + pig body + border")
         print("  🟢 Metal2.drawing (10/0) = pig details + eyes")
         print("  🔴 Metal3.drawing (30/0) = pig snout + key")
         print()
         print("Using .drawing layers (TinyTapeout whitelisted).")
-        print("Pixel art uses large rectangles that meet DRC min width/space rules.")
-        print()
-        print("NOTE: Fine text disabled to avoid DRC violations from thin strokes.")
+        print("All geometry meets DRC min width/space rules.")
 
 
 if __name__ == '__main__':
