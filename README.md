@@ -4,6 +4,7 @@
 
 > Put a book on a chip! Create silicon art with text visible under a microscope.
 
+
 ## Overview
 
 This project demonstrates how to create **silicon art** using [TinyTapeout](https://tinytapeout.com/) - putting text, characters, or even entire books onto a silicon wafer that can be viewed under a microscope.
