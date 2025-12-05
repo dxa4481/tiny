@@ -885,7 +885,7 @@ def main():
         description='Create combined Pixel Pig + Canary Token GDS'
     )
     parser.add_argument('--text', '-t', 
-        default='[default]\naws_access_key_id=\nAKIAX24QKKOLLIHNWPFY\naws_secret_access_key=\nn6KkGJ8wrUpVUd6ZH8rw\n7DivKurwuxRXuFrzrSpi\noutput=json region=us-east-2\n\nTruffleHog This!',
+        default='[default]\naws_access_key_id =\n     AKIAX24QKKOLLIHNWPFY\naws_secret_access_key =\n     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\n\n\nDon\'t Forget To Run TruffleHog!',
         help='Canary token text')
     parser.add_argument('--output', '-o', default='gds',
                        help='Output directory')
