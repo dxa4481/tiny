@@ -111,9 +111,10 @@ GRID_WIDTH = 19
 GRID_HEIGHT = 12
 
 # Density fill parameters
-FILL_SIZE = 2.0      # 2µm x 2µm fill squares
-FILL_SPACING = 1.0   # 1µm gap between fills (meets 0.18-0.21µm min spacing)
+FILL_SIZE = 2.5      # 2.5µm x 2.5µm fill squares (larger = more coverage)
+FILL_SPACING = 0.5   # 0.5µm gap between fills (above 0.21µm min spacing)
 FILL_PITCH = FILL_SIZE + FILL_SPACING  # 3µm pitch
+ART_BUFFER = 2.0     # 2µm clearance around art (minimum for visibility while meeting density)
 
 
 def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top):
@@ -130,7 +131,8 @@ def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bo
                       if p.layer == layer and p.datatype == datatype]
     
     # Buffer distance for spacing from existing geometry
-    buffer_distance = FILL_SPACING + 0.05  # Just over min spacing
+    # Use larger buffer to keep fill away from art for better visibility
+    buffer_distance = ART_BUFFER
     
     # Calculate fill area (inside the border, avoid pin margins)
     fill_x_start = margin_left + 2
@@ -269,24 +271,27 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 4. Calculate layout areas - pig takes center stage
+    # 4. Calculate layout areas - pig bottom-left, text upper area
     # -------------------------------------------------------------------------
     margin_left = 12.0   # Room for power pins
     margin_right = 3.0
-    margin_bottom = 3.0
-    margin_top = 8.0     # Room for signal pins
+    margin_bottom = 5.0
+    margin_top = 10.0    # Room for signal pins
     
     available_width = DIE_WIDTH_UM - margin_left - margin_right
     available_height = DIE_HEIGHT_UM - margin_top - margin_bottom
     
     # -------------------------------------------------------------------------
-    # 5. Add pixel pig - centered in available area
+    # 5. Add pixel pig - bottom-left corner of available area
     # -------------------------------------------------------------------------
     
-    # Calculate pixel size to fit pig in available area
-    max_pixel_by_width = available_width / GRID_WIDTH
-    max_pixel_by_height = available_height / GRID_HEIGHT
-    pixel_size = min(max_pixel_by_width, max_pixel_by_height) * 0.80
+    # Size pig to take about 40% of available width
+    pig_area_width = available_width * 0.45
+    pig_area_height = available_height * 0.70
+    
+    max_pixel_by_width = pig_area_width / GRID_WIDTH
+    max_pixel_by_height = pig_area_height / GRID_HEIGHT
+    pixel_size = min(max_pixel_by_width, max_pixel_by_height) * 0.90
     
     # Ensure pixel size meets minimum DRC requirements (0.20µm for all metals)
     MIN_PIXEL_SIZE = 0.5  # Well above 0.20µm minimum
@@ -295,12 +300,13 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     pig_width = GRID_WIDTH * pixel_size
     pig_height = GRID_HEIGHT * pixel_size
     
-    # Center pig in available area
-    pig_offset_x = margin_left + (available_width - pig_width) / 2
-    pig_offset_y = margin_bottom + (available_height - pig_height) / 2
+    # Position pig in bottom-left
+    pig_offset_x = margin_left + 5.0
+    pig_offset_y = margin_bottom + 5.0
     
     print(f"Pig pixel size: {pixel_size:.2f} µm (min DRC: 0.20 µm)")
     print(f"Pig dimensions: {pig_width:.1f} x {pig_height:.1f} µm")
+    print(f"Pig position: ({pig_offset_x:.1f}, {pig_offset_y:.1f})")
     
     # Add all pig pixels
     pixel_data = [
@@ -330,11 +336,13 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     print(f"Pig pixels: {total_pixels}")
     
     # -------------------------------------------------------------------------
-    # 6. Add canary token text (re-enabled - strokes are ~1µm wide, above DRC min)
+    # 6. Add canary token text - upper right area (above and right of pig)
     # -------------------------------------------------------------------------
-    # Calculate text area (right side of pig)
-    text_area_x = pig_offset_x + pig_width + 5.0  # 5µm gap after pig
-    text_area_width = DIE_WIDTH_UM - margin_right - text_area_x
+    # Text area: right half of die, upper portion
+    text_area_x = margin_left + 10.0  # Start from left margin
+    text_area_y = pig_offset_y + pig_height + 10.0  # Above the pig
+    text_area_width = available_width - 10.0
+    text_area_height = DIE_HEIGHT_UM - margin_top - text_area_y - 5.0
     
     lines = text.split('\n')
     max_line_len = max(len(line) for line in lines) if lines else 1
@@ -345,10 +353,10 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     
     if font_size is None:
         width_per_char = text_area_width / (max_line_len * char_width_ratio) if max_line_len > 0 else 20
-        height_per_line = available_height / (1 + (num_lines - 1) * line_height_ratio) if num_lines > 0 else 20
+        height_per_line = text_area_height / (1 + (num_lines - 1) * line_height_ratio) if num_lines > 0 else 20
         font_size = min(width_per_char, height_per_line) * 0.85
         font_size = max(font_size, 3.0)  # Minimum 3µm to ensure all features >= 0.16µm
-        font_size = min(font_size, 15.0)
+        font_size = min(font_size, 8.0)  # Cap size to fit
     
     print(f"Text font size: {font_size:.2f} µm (stroke width ~{font_size * 0.375:.2f} µm)")
     
@@ -373,17 +381,26 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             text_min_x = min(xs)
             text_min_y = min(ys)
             
-            # Center text in its area
-            center_x = text_area_x + text_area_width / 2
-            center_y = margin_bottom + available_height / 2
+            # Position text in upper area, left-aligned
+            target_x = text_area_x
+            target_y = text_area_y
             
-            offset_x = center_x - text_width / 2 - text_min_x
-            offset_y = center_y - text_height / 2 - text_min_y
+            offset_x = target_x - text_min_x
+            offset_y = target_y - text_min_y
+            
+            # Check bounds and adjust if needed
+            if text_width > text_area_width:
+                print(f"  Warning: Text width {text_width:.1f} > area {text_area_width:.1f}")
+            if target_x + text_width > DIE_WIDTH_UM - margin_right:
+                offset_x = DIE_WIDTH_UM - margin_right - text_width - text_min_x - 2
+            if target_y + text_height > DIE_HEIGHT_UM - margin_top:
+                offset_y = DIE_HEIGHT_UM - margin_top - text_height - text_min_y - 2
             
             for poly in text_polys:
                 cell.add(poly.translate(offset_x, offset_y))
             
             print(f"Text dimensions: {text_width:.1f} x {text_height:.1f} µm")
+            print(f"Text position: ({target_x:.1f}, {target_y:.1f})")
     
     # -------------------------------------------------------------------------
     # 7. Add decorative border (1µm wide - above 0.16µm DRC min)
