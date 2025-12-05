@@ -10,6 +10,7 @@ This project demonstrates how to create **silicon art** using [TinyTapeout](http
 
 ![Hello World Preview](docs/hello_world_preview.svg)
 
+
 ### What You'll Get
 
 - Text rendered as metal polygons on silicon
