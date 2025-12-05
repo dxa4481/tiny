@@ -4,8 +4,8 @@
  * This module is a minimal functional design for TinyTapeout.
  * The actual art (text/characters) is added via custom GDS layers.
  * 
- * The design passes inputs to outputs with a simple XOR pattern,
- * keeping the logic minimal so most of the silicon area is available for art.
+ * All outputs are tied to ground (0) for minimal logic, while maintaining
+ * proper connections to all input pins to satisfy synthesis requirements.
  * 
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,8 +27,7 @@ module tt_um_silicon_art (
     input  wire       rst_n     // Reset (active low)
 );
 
-    // Register to properly use clk and rst_n signals
-    // This ensures these pins are connected in the synthesized design
+    // Register to ensure clk and rst_n pins are connected in synthesis
     reg [7:0] latched_input;
     
     always @(posedge clk or negedge rst_n) begin
@@ -38,13 +37,13 @@ module tt_um_silicon_art (
             latched_input <= ui_in;
     end
 
-    // Output: XOR pattern when enabled, latched value when disabled
-    // This ensures ui_in, ena, clk, rst_n are all used
-    assign uo_out = ena ? (ui_in ^ 8'hAA) : latched_input;
+    // Outputs are grounded (0) during normal operation (ena=1)
+    // The conditional ensures ui_in/latched_input stay connected in synthesis
+    // Since ena is always 1 when powered, outputs are always 0
+    assign uo_out = ena ? 8'b0 : latched_input;
     
-    // Bidirectional pins: pass through inputs to outputs
-    // This ensures uio_in pins are connected
-    assign uio_out = uio_in;
+    // Bidirectional outputs grounded, but uio_in stays connected via conditional
+    assign uio_out = ena ? 8'b0 : uio_in;
     assign uio_oe  = 8'b0;  // Configure all as inputs
 
 endmodule

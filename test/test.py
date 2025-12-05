@@ -8,7 +8,7 @@ from cocotb.triggers import ClockCycles
 
 @cocotb.test()
 async def test_silicon_art(dut):
-    """Test the silicon art design with XOR pattern output."""
+    """Test the silicon art design with outputs tied to ground."""
     
     dut._log.info("Starting silicon art test")
 
@@ -25,31 +25,24 @@ async def test_silicon_art(dut):
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
 
-    # Test XOR pattern: output = input XOR 0xAA when enabled
-    test_cases = [
-        (0x00, 0xAA),  # 0x00 XOR 0xAA = 0xAA
-        (0xFF, 0x55),  # 0xFF XOR 0xAA = 0x55
-        (0xAA, 0x00),  # 0xAA XOR 0xAA = 0x00
-        (0x55, 0xFF),  # 0x55 XOR 0xAA = 0xFF
-        (0x12, 0xB8),  # 0x12 XOR 0xAA = 0xB8
-        (0x34, 0x9E),  # 0x34 XOR 0xAA = 0x9E
-    ]
+    # Test that outputs are grounded regardless of input (when ena=1)
+    test_values = [0x00, 0xFF, 0xAA, 0x55, 0x12, 0x34]
     
-    dut._log.info("Testing XOR pattern (ena=1)")
-    for input_val, expected in test_cases:
-        dut.ui_in.value = input_val
+    dut._log.info("Testing grounded outputs (ena=1)")
+    for val in test_values:
+        dut.ui_in.value = val
         await ClockCycles(dut.clk, 1)
         
         actual = int(dut.uo_out.value)
         
-        dut._log.info(f"Input: 0x{input_val:02X}, Output: 0x{actual:02X} (expected 0x{expected:02X})")
-        assert actual == expected, f"XOR pattern failed! Expected 0x{expected:02X}, got 0x{actual:02X}"
+        dut._log.info(f"Input: 0x{val:02X}, Output: 0x{actual:02X} (expected 0x00)")
+        assert actual == 0x00, f"Output should be grounded! Expected 0x00, got 0x{actual:02X}"
 
-    # Test bidirectional pass-through
-    dut._log.info("Testing bidirectional pass-through")
+    # Test bidirectional outputs are also grounded
+    dut._log.info("Testing bidirectional outputs grounded")
     dut.uio_in.value = 0x5A
     await ClockCycles(dut.clk, 1)
-    assert int(dut.uio_out.value) == 0x5A, "Bidirectional pass-through failed"
+    assert int(dut.uio_out.value) == 0x00, f"uio_out should be grounded, got 0x{int(dut.uio_out.value):02X}"
     
     # Test that uio_oe is always 0 (configured as inputs)
     assert int(dut.uio_oe.value) == 0x00, "uio_oe should be 0x00"
