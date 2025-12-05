@@ -116,6 +116,184 @@ FILL_SPACING = 0.25  # 0.25µm gap (just above 0.21µm min)
 FILL_PITCH = FILL_SIZE + FILL_SPACING  # 4.75µm pitch
 ART_BUFFER = 0.5     # 0.5µm clearance around art (very tight)
 
+# =============================================================================
+# Pixel Font Definition (5x7 characters)
+# Each character is a list of (x, y) coordinates for filled pixels
+# Origin is bottom-left of character cell
+# =============================================================================
+
+# DRC-safe pixel font parameters
+FONT_PIXEL_SIZE = 0.5   # 0.5 µm pixels (well above 0.16 µm min width)
+FONT_PIXEL_GAP = 0.25   # 0.25 µm gap (above 0.18 µm min spacing)
+FONT_CHAR_WIDTH = 5     # 5 pixels wide
+FONT_CHAR_HEIGHT = 7    # 7 pixels tall
+FONT_CHAR_GAP = 1       # 1 pixel gap between characters
+FONT_LINE_GAP = 2       # 2 pixel gap between lines
+
+# 5x7 Pixel Font - each character defined as list of (x, y) pixel coordinates
+# Coordinates are 0-indexed from bottom-left
+PIXEL_FONT = {
+    'A': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(1,3),(1,6),(2,6),(3,3),(3,6),(4,0),(4,1),(4,2),(4,3),(4,4),(4,5)],
+    'B': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,0),(1,3),(1,6),(2,0),(2,3),(2,6),(3,0),(3,3),(3,6),(4,1),(4,2),(4,4),(4,5)],
+    'C': [(0,1),(0,2),(0,3),(0,4),(0,5),(1,0),(1,6),(2,0),(2,6),(3,0),(3,6),(4,1),(4,5)],
+    'D': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,0),(1,6),(2,0),(2,6),(3,0),(3,6),(4,1),(4,2),(4,3),(4,4),(4,5)],
+    'E': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,0),(1,3),(1,6),(2,0),(2,3),(2,6),(3,0),(3,3),(3,6),(4,0),(4,6)],
+    'F': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,3),(1,6),(2,3),(2,6),(3,3),(3,6),(4,6)],
+    'G': [(0,1),(0,2),(0,3),(0,4),(0,5),(1,0),(1,6),(2,0),(2,3),(2,6),(3,0),(3,3),(3,6),(4,1),(4,2),(4,3),(4,5)],
+    'H': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,3),(2,3),(3,3),(4,0),(4,1),(4,2),(4,3),(4,4),(4,5),(4,6)],
+    'I': [(0,0),(0,6),(1,0),(1,6),(2,0),(2,1),(2,2),(2,3),(2,4),(2,5),(2,6),(3,0),(3,6),(4,0),(4,6)],
+    'J': [(0,1),(0,2),(1,0),(2,0),(3,0),(3,1),(3,2),(3,3),(3,4),(3,5),(3,6),(4,6)],
+    'K': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,3),(2,2),(2,4),(3,1),(3,5),(4,0),(4,6)],
+    'L': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,0),(2,0),(3,0),(4,0)],
+    'M': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,5),(2,4),(3,5),(4,0),(4,1),(4,2),(4,3),(4,4),(4,5),(4,6)],
+    'N': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,5),(2,4),(3,3),(4,0),(4,1),(4,2),(4,3),(4,4),(4,5),(4,6)],
+    'O': [(0,1),(0,2),(0,3),(0,4),(0,5),(1,0),(1,6),(2,0),(2,6),(3,0),(3,6),(4,1),(4,2),(4,3),(4,4),(4,5)],
+    'P': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,3),(1,6),(2,3),(2,6),(3,3),(3,6),(4,4),(4,5)],
+    'Q': [(0,1),(0,2),(0,3),(0,4),(0,5),(1,0),(1,6),(2,0),(2,2),(2,6),(3,0),(3,1),(3,6),(4,0),(4,2),(4,3),(4,4),(4,5)],
+    'R': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,3),(1,6),(2,3),(2,6),(3,2),(3,3),(3,6),(4,0),(4,1),(4,4),(4,5)],
+    'S': [(0,1),(0,5),(1,0),(1,3),(1,6),(2,0),(2,3),(2,6),(3,0),(3,3),(3,6),(4,1),(4,5)],
+    'T': [(0,6),(1,6),(2,0),(2,1),(2,2),(2,3),(2,4),(2,5),(2,6),(3,6),(4,6)],
+    'U': [(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,0),(2,0),(3,0),(4,1),(4,2),(4,3),(4,4),(4,5),(4,6)],
+    'V': [(0,2),(0,3),(0,4),(0,5),(0,6),(1,1),(2,0),(3,1),(4,2),(4,3),(4,4),(4,5),(4,6)],
+    'W': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,1),(2,2),(3,1),(4,0),(4,1),(4,2),(4,3),(4,4),(4,5),(4,6)],
+    'X': [(0,0),(0,1),(0,5),(0,6),(1,2),(1,4),(2,3),(3,2),(3,4),(4,0),(4,1),(4,5),(4,6)],
+    'Y': [(0,4),(0,5),(0,6),(1,3),(2,0),(2,1),(2,2),(3,3),(4,4),(4,5),(4,6)],
+    'Z': [(0,0),(0,6),(1,0),(1,1),(1,6),(2,0),(2,2),(2,6),(3,0),(3,3),(3,6),(4,0),(4,4),(4,5),(4,6)],
+    'a': [(0,1),(0,2),(1,0),(1,3),(2,0),(2,3),(3,0),(3,3),(4,0),(4,1),(4,2),(4,3),(4,4)],
+    'b': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,0),(1,3),(2,0),(2,3),(3,0),(3,3),(4,1),(4,2)],
+    'c': [(0,1),(0,2),(1,0),(1,3),(2,0),(2,3),(3,0),(3,3),(4,1)],
+    'd': [(0,1),(0,2),(1,0),(1,3),(2,0),(2,3),(3,0),(3,3),(4,0),(4,1),(4,2),(4,3),(4,4),(4,5),(4,6)],
+    'e': [(0,1),(0,2),(1,0),(1,2),(1,3),(2,0),(2,2),(2,3),(3,0),(3,2),(3,3),(4,1),(4,2)],
+    'f': [(0,3),(1,0),(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(2,3),(2,6),(3,6)],
+    'g': [(0,0),(1,0),(1,1),(1,3),(1,4),(2,0),(2,2),(2,5),(3,0),(3,2),(3,5),(4,1),(4,3),(4,4)],
+    'h': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,3),(2,3),(3,3),(4,0),(4,1),(4,2)],
+    'i': [(2,0),(2,1),(2,2),(2,3),(2,5)],
+    'j': [(0,0),(1,0),(1,1),(2,0),(2,1),(2,2),(2,3),(2,5)],
+    'k': [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),(1,2),(2,1),(2,3),(3,0),(4,0)],
+    'l': [(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(2,0),(3,0)],
+    'm': [(0,0),(0,1),(0,2),(0,3),(1,3),(2,0),(2,1),(2,2),(2,3),(3,3),(4,0),(4,1),(4,2),(4,3)],
+    'n': [(0,0),(0,1),(0,2),(0,3),(1,3),(2,3),(3,3),(4,0),(4,1),(4,2)],
+    'o': [(0,1),(0,2),(1,0),(1,3),(2,0),(2,3),(3,0),(3,3),(4,1),(4,2)],
+    'p': [(0,0),(0,1),(0,2),(0,3),(0,4),(1,3),(1,4),(2,3),(2,4),(3,3),(3,4),(4,4)],
+    'q': [(0,4),(1,3),(1,4),(2,3),(2,4),(3,3),(3,4),(4,0),(4,1),(4,2),(4,3),(4,4)],
+    'r': [(0,0),(0,1),(0,2),(0,3),(1,3),(2,3),(3,3)],
+    's': [(0,0),(0,3),(1,0),(1,2),(1,3),(2,0),(2,2),(2,3),(3,0),(3,2),(3,3),(4,0),(4,3)],
+    't': [(0,3),(1,0),(1,1),(1,2),(1,3),(1,4),(1,5),(2,0),(2,3),(3,0)],
+    'u': [(0,1),(0,2),(0,3),(1,0),(2,0),(3,0),(4,0),(4,1),(4,2),(4,3)],
+    'v': [(0,1),(0,2),(0,3),(1,0),(2,0),(3,0),(4,1),(4,2),(4,3)],
+    'w': [(0,0),(0,1),(0,2),(0,3),(1,0),(2,0),(2,1),(3,0),(4,0),(4,1),(4,2),(4,3)],
+    'x': [(0,0),(0,3),(1,1),(1,2),(2,1),(2,2),(3,1),(3,2),(4,0),(4,3)],
+    'y': [(0,0),(0,4),(0,5),(1,0),(1,3),(2,0),(2,3),(3,0),(3,3),(4,1),(4,2),(4,3)],
+    'z': [(0,0),(0,3),(1,0),(1,1),(1,3),(2,0),(2,2),(2,3),(3,0),(3,3),(4,0),(4,3)],
+    '0': [(0,1),(0,2),(0,3),(0,4),(0,5),(1,0),(1,2),(1,6),(2,0),(2,3),(2,6),(3,0),(3,4),(3,6),(4,1),(4,2),(4,3),(4,4),(4,5)],
+    '1': [(0,0),(1,0),(1,5),(2,0),(2,1),(2,2),(2,3),(2,4),(2,5),(2,6),(3,0),(4,0)],
+    '2': [(0,0),(0,1),(0,4),(0,5),(1,0),(1,2),(1,6),(2,0),(2,3),(2,6),(3,0),(3,4),(3,6),(4,0),(4,5),(4,6)],
+    '3': [(0,1),(0,5),(1,0),(1,3),(1,6),(2,0),(2,3),(2,6),(3,0),(3,3),(3,6),(4,1),(4,2),(4,4),(4,5)],
+    '4': [(0,2),(0,3),(1,2),(1,4),(2,0),(2,1),(2,2),(2,3),(2,4),(2,5),(2,6),(3,2),(3,5),(4,2),(4,6)],
+    '5': [(0,1),(0,6),(1,0),(1,3),(1,6),(2,0),(2,3),(2,6),(3,0),(3,3),(3,6),(4,0),(4,2),(4,4),(4,5),(4,6)],
+    '6': [(0,1),(0,2),(0,3),(0,4),(0,5),(1,0),(1,3),(1,6),(2,0),(2,3),(2,6),(3,0),(3,3),(3,6),(4,1),(4,2),(4,5)],
+    '7': [(0,6),(1,0),(1,1),(1,6),(2,2),(2,6),(3,3),(3,6),(4,4),(4,5),(4,6)],
+    '8': [(0,1),(0,2),(0,4),(0,5),(1,0),(1,3),(1,6),(2,0),(2,3),(2,6),(3,0),(3,3),(3,6),(4,1),(4,2),(4,4),(4,5)],
+    '9': [(0,1),(0,4),(0,5),(1,0),(1,3),(1,6),(2,0),(2,3),(2,6),(3,0),(3,3),(3,6),(4,1),(4,2),(4,3),(4,4),(4,5)],
+    ' ': [],
+    '.': [(2,0)],
+    ',': [(1,0),(2,1)],
+    ':': [(2,1),(2,4)],
+    ';': [(1,0),(2,1),(2,4)],
+    '!': [(2,0),(2,2),(2,3),(2,4),(2,5),(2,6)],
+    '?': [(0,4),(0,5),(1,0),(1,6),(2,2),(2,3),(2,6),(3,6),(4,4),(4,5)],
+    '-': [(1,3),(2,3),(3,3)],
+    '_': [(0,0),(1,0),(2,0),(3,0),(4,0)],
+    '=': [(0,2),(0,4),(1,2),(1,4),(2,2),(2,4),(3,2),(3,4),(4,2),(4,4)],
+    '+': [(1,3),(2,2),(2,3),(2,4),(3,3)],
+    '*': [(0,2),(0,4),(1,3),(2,2),(2,3),(2,4),(3,3),(4,2),(4,4)],
+    '/': [(0,0),(0,1),(1,2),(2,3),(3,4),(4,5),(4,6)],
+    '\\': [(0,5),(0,6),(1,4),(2,3),(3,2),(4,0),(4,1)],
+    '(': [(1,1),(1,2),(1,3),(1,4),(1,5),(2,0),(2,6),(3,0),(3,6)],
+    ')': [(1,0),(1,6),(2,0),(2,6),(3,1),(3,2),(3,3),(3,4),(3,5)],
+    '[': [(1,0),(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(2,0),(2,6),(3,0),(3,6)],
+    ']': [(1,0),(1,6),(2,0),(2,6),(3,0),(3,1),(3,2),(3,3),(3,4),(3,5),(3,6)],
+    '{': [(1,3),(2,0),(2,1),(2,2),(2,4),(2,5),(2,6),(3,0),(3,6)],
+    '}': [(1,0),(1,6),(2,0),(2,1),(2,2),(2,4),(2,5),(2,6),(3,3)],
+    '<': [(1,2),(1,4),(2,1),(2,5),(3,0),(3,6)],
+    '>': [(1,0),(1,6),(2,1),(2,5),(3,2),(3,4)],
+    '\'': [(2,5),(2,6)],
+    '"': [(1,5),(1,6),(3,5),(3,6)],
+    '`': [(1,6),(2,5)],
+    '@': [(0,1),(0,2),(0,3),(0,4),(0,5),(1,0),(1,3),(1,6),(2,0),(2,2),(2,4),(2,6),(3,0),(3,2),(3,3),(3,6),(4,1),(4,2),(4,5)],
+    '#': [(0,1),(0,2),(0,4),(0,5),(1,0),(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(2,1),(2,2),(2,4),(2,5),(3,0),(3,1),(3,2),(3,3),(3,4),(3,5),(3,6),(4,1),(4,2),(4,4),(4,5)],
+    '$': [(0,1),(0,4),(0,5),(1,0),(1,2),(1,6),(2,0),(2,1),(2,2),(2,3),(2,4),(2,5),(2,6),(3,0),(3,4),(3,6),(4,1),(4,2),(4,5)],
+    '%': [(0,0),(0,1),(0,5),(0,6),(1,0),(1,2),(1,6),(2,3),(3,0),(3,4),(3,6),(4,0),(4,1),(4,5),(4,6)],
+    '^': [(1,5),(2,6),(3,5)],
+    '&': [(0,0),(0,1),(0,4),(0,5),(1,0),(1,2),(1,3),(1,6),(2,0),(2,3),(2,6),(3,1),(3,4),(3,6),(4,0),(4,2),(4,5)],
+    '|': [(2,0),(2,1),(2,2),(2,3),(2,4),(2,5),(2,6)],
+    '~': [(0,4),(1,5),(2,4),(3,5),(4,4)],
+}
+
+
+def render_pixel_text(text, x_start, y_start, layer, datatype, pixel_size=None, pixel_gap=None):
+    """
+    Render text as DRC-safe pixel rectangles.
+    
+    Args:
+        text: String to render (supports newlines)
+        x_start: X coordinate of text origin (left edge)
+        y_start: Y coordinate of text origin (bottom edge)
+        layer: GDS layer number
+        datatype: GDS datatype
+        pixel_size: Size of each pixel in µm (default: FONT_PIXEL_SIZE)
+        pixel_gap: Gap between pixels in µm (default: FONT_PIXEL_GAP)
+    
+    Returns:
+        List of gdstk.Rectangle objects, and (width, height) of rendered text
+    """
+    if pixel_size is None:
+        pixel_size = FONT_PIXEL_SIZE
+    if pixel_gap is None:
+        pixel_gap = FONT_PIXEL_GAP
+    
+    pixel_pitch = pixel_size + pixel_gap
+    char_width = FONT_CHAR_WIDTH * pixel_pitch
+    char_height = FONT_CHAR_HEIGHT * pixel_pitch
+    char_spacing = (FONT_CHAR_WIDTH + FONT_CHAR_GAP) * pixel_pitch
+    line_spacing = (FONT_CHAR_HEIGHT + FONT_LINE_GAP) * pixel_pitch
+    
+    rectangles = []
+    lines = text.split('\n')
+    
+    # Calculate total dimensions
+    max_line_len = max(len(line) for line in lines) if lines else 0
+    total_width = max_line_len * char_spacing - (FONT_CHAR_GAP * pixel_pitch) if max_line_len > 0 else 0
+    total_height = len(lines) * line_spacing - (FONT_LINE_GAP * pixel_pitch) if lines else 0
+    
+    # Render from top line to bottom (y decreases)
+    for line_idx, line in enumerate(lines):
+        line_y = y_start + total_height - (line_idx + 1) * line_spacing + (FONT_LINE_GAP * pixel_pitch)
+        
+        for char_idx, char in enumerate(line):
+            char_x = x_start + char_idx * char_spacing
+            
+            # Get pixel pattern for this character
+            if char in PIXEL_FONT:
+                pixels = PIXEL_FONT[char]
+            else:
+                # Unknown character - render as filled block
+                pixels = [(x, y) for x in range(5) for y in range(7)]
+            
+            # Create rectangles for each pixel
+            for (px, py) in pixels:
+                rect_x = char_x + px * pixel_pitch
+                rect_y = line_y + py * pixel_pitch
+                rect = gdstk.rectangle(
+                    (rect_x, rect_y),
+                    (rect_x + pixel_size, rect_y + pixel_size),
+                    layer=layer,
+                    datatype=datatype
+                )
+                rectangles.append(rect)
+    
+    return rectangles, (total_width, total_height)
+
 
 def get_art_exclusion_zone(cell, buffer_distance, pig_bounds, text_bounds):
     """
@@ -299,12 +477,12 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     available_height = DIE_HEIGHT_UM - margin_top - margin_bottom
     
     # -------------------------------------------------------------------------
-    # 5. Add pixel pig - centered in available area (larger since no text)
+    # 5. Add pixel pig - bottom portion of available area
     # -------------------------------------------------------------------------
     
-    # Size pig to take most of available space (80% since no text)
-    pig_area_width = available_width * 0.80
-    pig_area_height = available_height * 0.80
+    # Size pig to take about 45% of available width (leaving room for text above)
+    pig_area_width = available_width * 0.45
+    pig_area_height = available_height * 0.50  # Bottom half for pig
     
     max_pixel_by_width = pig_area_width / GRID_WIDTH
     max_pixel_by_height = pig_area_height / GRID_HEIGHT
@@ -317,9 +495,9 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     pig_width = GRID_WIDTH * pixel_size
     pig_height = GRID_HEIGHT * pixel_size
     
-    # Center the pig in the available area
-    pig_offset_x = margin_left + (available_width - pig_width) / 2
-    pig_offset_y = margin_bottom + (available_height - pig_height) / 2
+    # Position pig in bottom-left
+    pig_offset_x = margin_left + 5.0
+    pig_offset_y = margin_bottom + 5.0
     
     print(f"Pig pixel size: {pixel_size:.2f} µm (min DRC: 0.20 µm)")
     print(f"Pig dimensions: {pig_width:.1f} x {pig_height:.1f} µm")
@@ -353,24 +531,93 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     print(f"Pig pixels: {total_pixels}")
     
     # -------------------------------------------------------------------------
-    # 6. Text DISABLED - gdstk.text() creates self-touching polygons
+    # 6. Add canary token text using DRC-safe pixel font
     # -------------------------------------------------------------------------
-    # NOTE: gdstk.text() creates polygons with self-touching points at corners
-    # of letters like 'A', 'R', 'B', 'D', etc. These self-touching points cause
-    # DRC violations for notch width and minimum width rules.
-    #
-    # Example: The letter 'A' is created as a single polygon where the internal
-    # crossbar connects to the outer frame, creating points that touch themselves.
-    # This results in "0 internal distance" which violates DRC rules.
-    #
-    # The text is completely disabled to ensure DRC passes.
-    print("Text: DISABLED (gdstk.text creates self-touching polygons that violate DRC)")
+    # NOTE: gdstk.text() creates polygons with self-touching points that violate DRC.
+    # Instead, we use a custom pixel font renderer that creates simple rectangles.
+    # Each pixel is a separate rectangle, ensuring DRC compliance.
     
-    # Track text dimensions for exclusion zone (no text, so no exclusion needed)
-    text_final_width = 0
-    text_final_height = 0
-    text_final_x = 0
-    text_final_y = 0
+    # Text area: above the pig (with proper margins to stay within die)
+    text_area_x = margin_left + 2.0
+    text_area_y = pig_offset_y + pig_height + 3.0
+    text_area_width = DIE_WIDTH_UM - margin_left - margin_right - 4.0  # Stay within die
+    text_area_height = DIE_HEIGHT_UM - margin_top - text_area_y - 2.0
+    
+    # Calculate optimal pixel size to fit the text
+    lines = text.split('\n')
+    max_line_len = max(len(line) for line in lines) if lines else 1
+    num_lines = len(lines)
+    
+    # Character cell is 5 pixels wide + 1 gap, 7 pixels tall + 2 gap
+    # Total pitch per character = (5 + 1) * pixel_pitch for width
+    # Total pitch per line = (7 + 2) * pixel_pitch for height
+    # 
+    # To fit max_line_len characters in text_area_width:
+    # max_line_len * 6 * pixel_pitch = text_area_width
+    # pixel_pitch = text_area_width / (max_line_len * 6)
+    # pixel_size = pixel_pitch * (1 / (1 + gap_ratio))
+    
+    # Using gap_ratio = 0.5 (gap is 50% of pixel size)
+    gap_ratio = 0.5
+    
+    # Calculate max pixel_pitch that fits width and height
+    chars_pitch_units = max_line_len * 6 - 1  # Subtract 1 for no gap after last char
+    lines_pitch_units = num_lines * 9 - 2     # Subtract 2 for no gap after last line
+    
+    max_pitch_by_width = text_area_width / chars_pitch_units if chars_pitch_units > 0 else 1
+    max_pitch_by_height = text_area_height / lines_pitch_units if lines_pitch_units > 0 else 1
+    
+    pixel_pitch = min(max_pitch_by_width, max_pitch_by_height)
+    
+    # pixel_pitch = pixel_size + pixel_gap = pixel_size * (1 + gap_ratio)
+    pixel_size = pixel_pitch / (1 + gap_ratio)
+    pixel_gap = pixel_size * gap_ratio
+    
+    # Ensure minimum DRC-safe sizes
+    MIN_TEXT_PIXEL = 0.20  # Metal1 min width is 0.16, use 0.20 for margin
+    MIN_TEXT_GAP = 0.20    # Metal1 min spacing is 0.18, use 0.20 for margin
+    
+    if pixel_size < MIN_TEXT_PIXEL or pixel_gap < MIN_TEXT_GAP:
+        # Text won't fit with DRC-safe dimensions - use minimum and accept clipping
+        pixel_size = MIN_TEXT_PIXEL
+        pixel_gap = MIN_TEXT_GAP
+        print(f"WARNING: Text may be clipped to fit (using minimum DRC-safe sizes)")
+    
+    # Cap at reasonable size for readability
+    MAX_TEXT_PIXEL = 1.0
+    if pixel_size > MAX_TEXT_PIXEL:
+        pixel_size = MAX_TEXT_PIXEL
+        pixel_gap = pixel_size * gap_ratio
+    
+    print(f"Text pixel size: {pixel_size:.3f} µm (DRC min: 0.16 µm)")
+    print(f"Text pixel gap: {pixel_gap:.3f} µm (DRC min: 0.18 µm)")
+    
+    # Render the text
+    text_rects, (text_width, text_height) = render_pixel_text(
+        text, text_area_x, text_area_y,
+        layer=TEXT_LAYER, datatype=TEXT_DATATYPE,
+        pixel_size=pixel_size, pixel_gap=pixel_gap
+    )
+    
+    # Verify text fits within die (clip any rectangles outside)
+    valid_rects = []
+    for rect in text_rects:
+        bb = rect.bounding_box()
+        if bb[1][0] <= DIE_WIDTH_UM - 1 and bb[1][1] <= DIE_HEIGHT_UM - 1:
+            valid_rects.append(rect)
+            cell.add(rect)
+    
+    if len(valid_rects) < len(text_rects):
+        print(f"  Clipped {len(text_rects) - len(valid_rects)} pixels outside die boundary")
+    
+    text_final_x = text_area_x
+    text_final_y = text_area_y
+    text_final_width = min(text_width, text_area_width)
+    text_final_height = min(text_height, text_area_height)
+    
+    print(f"Text dimensions: {text_width:.1f} x {text_height:.1f} µm")
+    print(f"Text position: ({text_final_x:.1f}, {text_final_y:.1f})")
+    print(f"Text pixels rendered: {len(valid_rects)}")
     
     # -------------------------------------------------------------------------
     # 7. Add decorative border using 4 separate rectangles (DRC-safe)
@@ -443,8 +690,12 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     # This prevents fill from appearing in gaps between characters/pixels
     pig_bounds = (pig_offset_x, pig_offset_y, pig_offset_x + pig_width, pig_offset_y + pig_height)
     
-    # No text bounds since text is disabled
+    # Text bounds for exclusion zone
     text_bounds = None
+    if text_final_width > 0:
+        text_bounds = (text_final_x, text_final_y, 
+                       text_final_x + text_final_width,
+                       text_final_y + text_final_height)
     
     # Create unified exclusion zone using bounding boxes
     exclusion_zone = get_art_exclusion_zone(cell, ART_BUFFER, pig_bounds, text_bounds)
@@ -656,7 +907,7 @@ def main():
     if gds_path:
         print()
         print("=" * 65)
-        print("SUCCESS! Design created (text DISABLED for DRC compliance):")
+        print("SUCCESS! Design created with DRC-safe pixel font:")
         print(f"  - {args.output}/{TOP_MODULE}.gds")
         print(f"  - {args.output}/{TOP_MODULE}.lef")
         print(f"  - {args.output}/{TOP_MODULE}.v")
@@ -664,18 +915,18 @@ def main():
         print("=" * 65)
         print()
         print("Design contents:")
-        print("  🐷 Pixel Pig (centered) - on Metal.drawing layers")
+        print("  🐷 Pixel Pig (bottom) - on Metal.drawing layers")
+        print("  📝 Canary Token (top) - pixel font on Metal1.drawing")
         print("  🔲 Border frame (4 rectangles) - on Metal1.drawing")
-        print("  📝 Text: DISABLED (gdstk.text causes DRC violations)")
         print()
         print("Layer usage:")
-        print("  🔵 Metal1.drawing (8/0)  = pig body + border + fill")
+        print("  🔵 Metal1.drawing (8/0)  = text + pig body + border + fill")
         print("  🟢 Metal2.drawing (10/0) = pig details + eyes + fill")
         print("  🔴 Metal3.drawing (30/0) = pig snout + key + fill")
         print()
         print("DRC fixes applied:")
+        print("  ✅ Text uses pixel font (simple rectangles, not gdstk.text)")
         print("  ✅ Border uses 4 separate rectangles (no self-touching corners)")
-        print("  ✅ Text disabled (gdstk.text creates self-touching polygons)")
         print("  ✅ All geometry is simple rectangles (DRC-safe)")
 
 
