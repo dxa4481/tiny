@@ -226,27 +226,24 @@ The `text_to_gds.py` script uses [gdstk](https://heitzmann.github.io/gdstk/) to:
 - Metal2-4: min width 0.20µm, min space 0.21µm, density 35-60%
 - TopMetal1: min width 1.64µm, min space 1.64µm, density 25-70%
 
-**Solution: Use `.filler` layers instead of `.drawing` layers!**
+**⚠️ CRITICAL: TinyTapeout's layer whitelist limits silicon art options!**
 
-To avoid DRC violations from silicon art (text, pixel art, etc.), this project uses
-**Metal.filler layers (datatype 22)** instead of Metal.drawing layers (datatype 0):
+The TinyTapeout precheck only allows specific layer/datatype combinations.
+For IHP-SG13G2, `.filler` layers (datatype 22) are **NOT in the whitelist**.
 
-| Purpose | Layer | Datatype | DRC Checked? |
-|---------|-------|----------|--------------|
-| Normal routing | Metal1.drawing | 8/0 | ✅ Yes - width/space rules |
-| **Art/Fill** | **Metal1.filler** | **8/22** | **❌ No width/space checks** |
-| Pins | Metal4.pin | 50/2 | Pin enclosure only |
+| Layer | Allowed Datatypes | Fabricated? | DRC? |
+|-------|-------------------|-------------|------|
+| Metal1.drawing | 8/0 | ✅ Yes | ✅ Width/space |
+| Metal1.pin | 8/2 | ✅ Yes | Pin only |
+| Metal1.text | 8/25 | ❌ **No** | N/A |
+| Metal1.filler | 8/22 | Would be... | **❌ NOT ALLOWED** |
 
-Key benefits of using `.filler` layers:
-- **No min width/space DRC** - Fine text strokes allowed
-- **Counts toward density** - Helps meet 35-60% requirement
-- **Still fabricated** - Real metal visible under microscope
-- **Standard approach** - Same as fill patterns added by tools
+**Practical approach for silicon art on IHP:**
+1. **Pixel art works**: Use large rectangles (>0.20µm) on `.drawing` layers
+2. **Fine text doesn't work**: gdstk.text() strokes often violate DRC
+3. **Density is a concern**: Sparse art may fail 35-60% density requirement
 
-When adding art to functional designs:
-- Use `.filler` layers for art (avoids DRC conflicts)
-- Leave margins from cell boundaries
-- Avoid power/ground rail areas
+This project uses **pixel art** (large rectangles) which meets DRC requirements.
 
 ## Resources
 
@@ -330,61 +327,71 @@ Signal pins are at Y=154.48µm (center). X positions from DEF:
 - uio_out[0-7]: 87.36 → 60.48
 - uio_oe[0-7]: 56.64 → 29.76
 
-## Troubleshooting: DRC Violations (47 errors)
+## Troubleshooting: DRC and Layer Violations
 
-### The Error
+### The Errors
 ```
-INFO: Running klayout sg13g2 on tt_um_silicon_art.gds
-WARNING: Layout dbu value (0.0009999999999999998) deviates from rule file dbu value (0.001)
-Number of DRC errors: 47
-ERROR: KLayout SG13G2 DRC ❌ Fail: Klayout sg13g2 failed with 47 DRC violations
+ERROR: KLayout SG13G2 DRC ❌ Fail: Klayout sg13g2 failed with 45 DRC violations
+ERROR: Layer check ❌ Fail: Invalid layers in GDS: {(30, 22), (10, 22), (8, 22)}
 ```
 
 ### Root Causes
-1. **Floating-point precision**: GDS database unit was 0.0009999... instead of exact 0.001
-2. **Wrong layer datatypes**: Art was on `.drawing` layers which have strict width/space DRC rules
+
+1. **Invalid layers**: TinyTapeout's precheck whitelist doesn't include `.filler` layers (datatype 22)
+2. **DRC violations**: Fine text strokes from gdstk.text() violate min width rules
+3. **DBU precision**: Floating-point issues with GDS database unit
+
+### The Reality of IHP Silicon Art
+
+**TinyTapeout's layer whitelist is restrictive.** For IHP-SG13G2:
+
+| Layer | Allowed? | Fabricated? | Notes |
+|-------|----------|-------------|-------|
+| Metal1.drawing (8/0) | ✅ Yes | ✅ Yes | DRC checked (width/space) |
+| Metal1.pin (8/2) | ✅ Yes | ✅ Yes | For pins only |
+| Metal1.text (8/25) | ✅ Yes | ❌ **No** | Documentation only |
+| Metal1.filler (8/22) | ❌ **No** | Would be... | **Not in whitelist!** |
+
+This means:
+- **Pixel art is possible** using `.drawing` layers with DRC-compliant geometry
+- **Fine text is difficult** because strokes often violate DRC rules
+- **There's no "DRC-exempt" fabricated layer** in the TinyTapeout whitelist
 
 ### The Fix (Dec 2024)
 
-**1. Fixed DBU precision issue:**
+**1. Use .drawing layers (datatype 0) - the only whitelisted fabricated layers:**
 ```python
-# Before (floating-point issues)
-lib = gdstk.Library()
+# Valid and fabricated (but DRC checked)
+TEXT_LAYER = 8      # Metal1
+TEXT_DATATYPE = 0   # .drawing - TinyTapeout whitelisted
+```
 
-# After (exact precision)
+**2. Use pixel art instead of fine text:**
+- Each pixel must be >= 0.20µm (max of all metal min widths)
+- Pixels must be spaced >= 0.21µm apart
+- The pixel pig design uses ~7.6µm pixels, easily passing DRC
+
+**3. Fixed DBU precision:**
+```python
 lib = gdstk.Library(unit=1e-6, precision=1e-9)  # DBU = 0.001 exactly
 ```
 
-**2. Changed art layers from `.drawing` to `.filler`:**
-```python
-# Before (DRC violations)
-TEXT_LAYER = 8      # Metal1.drawing
-TEXT_DATATYPE = 0   # .drawing - checked for min width/space
-
-# After (no DRC issues)
-TEXT_LAYER = 8      # Metal1
-TEXT_DATATYPE = 22  # .filler - NOT checked for width/space DRC
-```
-
-### IHP Layer Reference
-| Layer Name | GDS | Purpose | DRC? |
-|------------|-----|---------|------|
-| Metal1.drawing | 8/0 | Normal routing | ✅ Width/space |
-| Metal1.filler | 8/22 | Fill patterns, art | ❌ No width/space |
-| Metal1.pin | 8/2 | Pin markers | Enclosure only |
-| Metal2.drawing | 10/0 | Normal routing | ✅ Width/space |
-| Metal2.filler | 10/22 | Fill patterns, art | ❌ No width/space |
-| Metal3.filler | 30/22 | Fill patterns, art | ❌ No width/space |
-| Metal4.pin | 50/2 | Signal pins | Enclosure only |
-| TopMetal1.pin | 126/2 | Power pins | Enclosure only |
+### IHP Layer Reference (TinyTapeout Allowed)
+| Layer Name | GDS | Purpose | Fabricated? |
+|------------|-----|---------|-------------|
+| Metal1.drawing | 8/0 | Art + routing | ✅ Yes (DRC checked) |
+| Metal1.pin | 8/2 | Pins | ✅ Yes |
+| Metal1.text | 8/25 | Documentation | ❌ No |
+| Metal4.pin | 50/2 | Signal pins | ✅ Yes |
+| TopMetal1.pin | 126/2 | Power pins | ✅ Yes |
 | prBoundary | 189/4 | Die boundary | N/A |
 
 ### Key Insight
-**Silicon art requires using `.filler` layers (datatype 22)** to avoid DRC violations.
-The `.filler` datatype:
-- Is still fabricated as real metal (visible under microscope)
-- Counts toward density requirements  
-- Is NOT checked for min width/space rules (allows fine text strokes)
+**For TinyTapeout IHP, silicon art must use `.drawing` layers and meet DRC rules.**
+This limits options to:
+- Pixel art with large (>0.2µm) rectangles ✅
+- Large text with thick (>2µm) strokes ✅
+- Fine detailed text ❌ (violates DRC)
 
 ## License
 
