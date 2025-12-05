@@ -1,4 +1,6 @@
 name: precheck
+# FIXED: Use custom_gds workflow for silicon art submission
+# The previous version used standard synthesis which ignored our pixel art!
 
 on:
   push:
@@ -8,21 +10,49 @@ jobs:
   gds:
     runs-on: ubuntu-24.04
     steps:
-      - name: checkout repo
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Precheck
-        uses: TinyTapeout/tt-gds-action@ttihp26a
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          pdk: ihp-sg13g2
-          librelane-version: 3.0.0.dev44
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install gdstk
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin
+
+      - name: Generate Pixel Pig + Canary Token GDS
+        run: |
+          cd src
+          python create_pixel_pig.py --output ../gds
+          ls -la ../gds/
+
+      - name: Create PNG preview (fallback for custom_gds action)
+        run: |
+          rsvg-convert -w 1024 -h 768 gds/preview.svg -o gds_render.png
+          echo "Created fallback gds_render.png"
+          ls -la gds_render.png
+
+      # CRITICAL FIX: Use custom_gds action instead of standard synthesis!
+      # The standard TinyTapeout action synthesizes Verilog, ignoring our pixel art.
+      # The custom_gds action uses our pre-generated GDS with the artwork.
+      - name: Build with Custom GDS
+        uses: TinyTapeout/tt-gds-action/custom_gds@ttihp25a
+        with:
+          top_module: tt_um_silicon_art
+          gds_path: gds/tt_um_silicon_art.gds
+          lef_path: gds/tt_um_silicon_art.lef
+          verilog_path: gds/tt_um_silicon_art.v
 
   precheck:
     needs: gds
     runs-on: ubuntu-24.04
     steps:
       - name: Run Tiny Tapeout Precheck
-        uses: TinyTapeout/tt-gds-action/precheck@ttihp26a
+        uses: TinyTapeout/tt-gds-action/precheck@ttihp25a
 

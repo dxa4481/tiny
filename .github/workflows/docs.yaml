@@ -12,5 +12,6 @@ jobs:
         with:
           submodules: recursive
 
+      # FIXED: Updated from @tt10 to @ttihp25a for IHP-SG13G2 PDK compatibility
       - name: Build docs
-        uses: TinyTapeout/tt-gds-action/docs@tt10
+        uses: TinyTapeout/tt-gds-action/docs@ttihp25a

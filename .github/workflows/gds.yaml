@@ -39,8 +39,10 @@ jobs:
           echo "Created fallback gds_render.png:"
           ls -la gds_render.png
 
+      # Use custom_gds action for silicon art (not standard Verilog synthesis)
+      # FIXED: Updated from @tt10 to @ttihp25a for IHP-SG13G2 PDK compatibility
       - name: Build with Custom GDS
-        uses: TinyTapeout/tt-gds-action/custom_gds@tt10
+        uses: TinyTapeout/tt-gds-action/custom_gds@ttihp25a
         with:
           top_module: tt_um_silicon_art
           gds_path: gds/tt_um_silicon_art.gds
@@ -55,4 +57,4 @@ jobs:
       id-token: write
     steps:
       - name: Deploy to GitHub Pages
-        uses: TinyTapeout/tt-gds-action/viewer@tt10
+        uses: TinyTapeout/tt-gds-action/viewer@ttihp25a
