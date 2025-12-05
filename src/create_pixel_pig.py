@@ -213,16 +213,20 @@ def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bo
 
 def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     """
-    Create GDS with pixel pig art (text removed to avoid DRC issues).
+    Create GDS with pixel pig art only (text DISABLED to avoid DRC issues).
     
     Args:
-        text: Canary token text (currently disabled to avoid DRC)
+        text: Canary token text (DISABLED - gdstk.text() creates self-touching 
+              polygons that cause DRC violations)
         output_dir: Directory for output files
         font_size: Font size in µm (not used - text disabled)
         pig_scale: Scale factor for the pig (0.4 = 40% of available height)
     
-    NOTE: Fine text from gdstk.text() causes DRC violations due to thin strokes.
-    Only the pixel pig is included as it uses large rectangles that pass DRC.
+    NOTE: gdstk.text() creates polygons with self-touching points at letter corners
+    (e.g., 'A', 'R', 'B', 'D' have internal notches). These cause DRC violations
+    for notch width rules. The text is completely disabled to pass DRC.
+    
+    The pixel pig uses simple rectangles that are DRC-safe.
     """
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
@@ -284,7 +288,7 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 4. Calculate layout areas - pig bottom-left, text upper area
+    # 4. Calculate layout areas - pig centered in available area
     # -------------------------------------------------------------------------
     margin_left = 12.0   # Room for power pins
     margin_right = 3.0
@@ -295,12 +299,12 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     available_height = DIE_HEIGHT_UM - margin_top - margin_bottom
     
     # -------------------------------------------------------------------------
-    # 5. Add pixel pig - bottom-left corner of available area
+    # 5. Add pixel pig - centered in available area (larger since no text)
     # -------------------------------------------------------------------------
     
-    # Size pig to take about 40% of available width
-    pig_area_width = available_width * 0.45
-    pig_area_height = available_height * 0.70
+    # Size pig to take most of available space (80% since no text)
+    pig_area_width = available_width * 0.80
+    pig_area_height = available_height * 0.80
     
     max_pixel_by_width = pig_area_width / GRID_WIDTH
     max_pixel_by_height = pig_area_height / GRID_HEIGHT
@@ -313,9 +317,9 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     pig_width = GRID_WIDTH * pixel_size
     pig_height = GRID_HEIGHT * pixel_size
     
-    # Position pig in bottom-left
-    pig_offset_x = margin_left + 5.0
-    pig_offset_y = margin_bottom + 5.0
+    # Center the pig in the available area
+    pig_offset_x = margin_left + (available_width - pig_width) / 2
+    pig_offset_y = margin_bottom + (available_height - pig_height) / 2
     
     print(f"Pig pixel size: {pixel_size:.2f} µm (min DRC: 0.20 µm)")
     print(f"Pig dimensions: {pig_width:.1f} x {pig_height:.1f} µm")
@@ -349,99 +353,84 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     print(f"Pig pixels: {total_pixels}")
     
     # -------------------------------------------------------------------------
-    # 6. Add canary token text - upper right area (above and right of pig)
+    # 6. Text DISABLED - gdstk.text() creates self-touching polygons
     # -------------------------------------------------------------------------
-    # Text area: right half of die, upper portion
-    text_area_x = margin_left + 10.0  # Start from left margin
-    text_area_y = pig_offset_y + pig_height + 10.0  # Above the pig
-    text_area_width = available_width - 10.0
-    text_area_height = DIE_HEIGHT_UM - margin_top - text_area_y - 5.0
+    # NOTE: gdstk.text() creates polygons with self-touching points at corners
+    # of letters like 'A', 'R', 'B', 'D', etc. These self-touching points cause
+    # DRC violations for notch width and minimum width rules.
+    #
+    # Example: The letter 'A' is created as a single polygon where the internal
+    # crossbar connects to the outer frame, creating points that touch themselves.
+    # This results in "0 internal distance" which violates DRC rules.
+    #
+    # The text is completely disabled to ensure DRC passes.
+    print("Text: DISABLED (gdstk.text creates self-touching polygons that violate DRC)")
     
-    lines = text.split('\n')
-    max_line_len = max(len(line) for line in lines) if lines else 1
-    num_lines = len(lines)
-    
-    char_width_ratio = 9/16
-    line_height_ratio = 5/4
-    
-    if font_size is None:
-        width_per_char = text_area_width / (max_line_len * char_width_ratio) if max_line_len > 0 else 20
-        height_per_line = text_area_height / (1 + (num_lines - 1) * line_height_ratio) if num_lines > 0 else 20
-        font_size = min(width_per_char, height_per_line) * 0.85
-        font_size = max(font_size, 3.0)  # Minimum 3µm to ensure all features >= 0.16µm
-        font_size = min(font_size, 8.0)  # Cap size to fit
-    
-    print(f"Text font size: {font_size:.2f} µm (stroke width ~{font_size * 0.375:.2f} µm)")
-    
-    text_polys = gdstk.text(
-        text, 
-        font_size, 
-        (0, 0),
-        layer=TEXT_LAYER,
-        datatype=TEXT_DATATYPE
-    )
-    
-    # Track text dimensions for exclusion zone
+    # Track text dimensions for exclusion zone (no text, so no exclusion needed)
     text_final_width = 0
     text_final_height = 0
-    text_final_x = text_area_x
-    text_final_y = text_area_y
-    
-    if text_polys:
-        all_points = []
-        for poly in text_polys:
-            all_points.extend(poly.points)
-        
-        if all_points:
-            xs = [p[0] for p in all_points]
-            ys = [p[1] for p in all_points]
-            text_final_width = max(xs) - min(xs)
-            text_final_height = max(ys) - min(ys)
-            text_min_x = min(xs)
-            text_min_y = min(ys)
-            
-            # Position text in upper area, left-aligned
-            target_x = text_area_x
-            target_y = text_area_y
-            
-            offset_x = target_x - text_min_x
-            offset_y = target_y - text_min_y
-            
-            # Check bounds and adjust if needed
-            if text_final_width > text_area_width:
-                print(f"  Warning: Text width {text_final_width:.1f} > area {text_area_width:.1f}")
-            if target_x + text_final_width > DIE_WIDTH_UM - margin_right:
-                offset_x = DIE_WIDTH_UM - margin_right - text_final_width - text_min_x - 2
-                text_final_x = target_x + offset_x + text_min_x
-            if target_y + text_final_height > DIE_HEIGHT_UM - margin_top:
-                offset_y = DIE_HEIGHT_UM - margin_top - text_final_height - text_min_y - 2
-                text_final_y = target_y + offset_y + text_min_y
-            
-            for poly in text_polys:
-                cell.add(poly.translate(offset_x, offset_y))
-            
-            print(f"Text dimensions: {text_final_width:.1f} x {text_final_height:.1f} µm")
-            print(f"Text position: ({text_final_x:.1f}, {text_final_y:.1f})")
+    text_final_x = 0
+    text_final_y = 0
     
     # -------------------------------------------------------------------------
-    # 7. Add decorative border (1µm wide - above 0.16µm DRC min)
+    # 7. Add decorative border using 4 separate rectangles (DRC-safe)
     # -------------------------------------------------------------------------
+    # NOTE: Using gdstk.boolean(outer, inner, "not") creates a single polygon
+    # with self-touching corners that violate DRC. Instead, we create 4 separate
+    # rectangles for the border sides, which avoids self-touching geometry.
     border_width = 1.0  # 1µm is well above 0.16µm Metal1 min width
     border_margin = 3.0
     
-    outer = gdstk.rectangle(
-        (margin_left - 2, border_margin),
-        (DIE_WIDTH_UM - border_margin, DIE_HEIGHT_UM - margin_top + 2),
+    # Inner rectangle corners (the hole in the frame)
+    inner_x1 = margin_left - 2 + border_width
+    inner_y1 = border_margin + border_width
+    inner_x2 = DIE_WIDTH_UM - border_margin - border_width
+    inner_y2 = DIE_HEIGHT_UM - margin_top + 2 - border_width
+    
+    # Outer rectangle corners
+    outer_x1 = margin_left - 2
+    outer_y1 = border_margin
+    outer_x2 = DIE_WIDTH_UM - border_margin
+    outer_y2 = DIE_HEIGHT_UM - margin_top + 2
+    
+    # Create 4 separate rectangles for the border sides
+    # Left side (full height)
+    left_border = gdstk.rectangle(
+        (outer_x1, outer_y1),
+        (inner_x1, outer_y2),
         layer=TEXT_LAYER,
         datatype=TEXT_DATATYPE
     )
-    inner = gdstk.rectangle(
-        (margin_left - 2 + border_width, border_margin + border_width),
-        (DIE_WIDTH_UM - border_margin - border_width, DIE_HEIGHT_UM - margin_top + 2 - border_width)
+    cell.add(left_border)
+    
+    # Right side (full height)
+    right_border = gdstk.rectangle(
+        (inner_x2, outer_y1),
+        (outer_x2, outer_y2),
+        layer=TEXT_LAYER,
+        datatype=TEXT_DATATYPE
     )
-    border_polys = gdstk.boolean(outer, inner, "not", layer=TEXT_LAYER, datatype=TEXT_DATATYPE)
-    for poly in border_polys:
-        cell.add(poly)
+    cell.add(right_border)
+    
+    # Bottom side (between left and right)
+    bottom_border = gdstk.rectangle(
+        (inner_x1, outer_y1),
+        (inner_x2, inner_y1),
+        layer=TEXT_LAYER,
+        datatype=TEXT_DATATYPE
+    )
+    cell.add(bottom_border)
+    
+    # Top side (between left and right)
+    top_border = gdstk.rectangle(
+        (inner_x1, inner_y2),
+        (inner_x2, outer_y2),
+        layer=TEXT_LAYER,
+        datatype=TEXT_DATATYPE
+    )
+    cell.add(top_border)
+    
+    print(f"Border: 4 rectangles ({border_width} µm width) - DRC-safe")
     
     # -------------------------------------------------------------------------
     # 8. Add density fill to meet 35-60% metal coverage requirement
@@ -454,12 +443,8 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     # This prevents fill from appearing in gaps between characters/pixels
     pig_bounds = (pig_offset_x, pig_offset_y, pig_offset_x + pig_width, pig_offset_y + pig_height)
     
-    # Text bounds (if text was added)
+    # No text bounds since text is disabled
     text_bounds = None
-    if text_final_width > 0:
-        text_bounds = (text_final_x, text_final_y, 
-                       text_final_x + text_final_width,
-                       text_final_y + text_final_height)
     
     # Create unified exclusion zone using bounding boxes
     exclusion_zone = get_art_exclusion_zone(cell, ART_BUFFER, pig_bounds, text_bounds)
@@ -671,7 +656,7 @@ def main():
     if gds_path:
         print()
         print("=" * 65)
-        print("SUCCESS! Combined design created:")
+        print("SUCCESS! Design created (text DISABLED for DRC compliance):")
         print(f"  - {args.output}/{TOP_MODULE}.gds")
         print(f"  - {args.output}/{TOP_MODULE}.lef")
         print(f"  - {args.output}/{TOP_MODULE}.v")
@@ -679,15 +664,19 @@ def main():
         print("=" * 65)
         print()
         print("Design contents:")
-        print("  🐷 Pixel Pig (left) - on Metal.drawing layers")
-        print("  📝 Canary Token (right) - on Metal1.drawing")
-        print("  🔵 Metal1.drawing (8/0)  = text + pig body + border")
-        print("  🟢 Metal2.drawing (10/0) = pig details + eyes")
-        print("  🔴 Metal3.drawing (30/0) = pig snout + key")
+        print("  🐷 Pixel Pig (centered) - on Metal.drawing layers")
+        print("  🔲 Border frame (4 rectangles) - on Metal1.drawing")
+        print("  📝 Text: DISABLED (gdstk.text causes DRC violations)")
         print()
-        print("Using .drawing layers (TinyTapeout whitelisted).")
-        print("All geometry meets DRC min width/space rules.")
-        print("Density fill added to meet 35-60% metal coverage requirement.")
+        print("Layer usage:")
+        print("  🔵 Metal1.drawing (8/0)  = pig body + border + fill")
+        print("  🟢 Metal2.drawing (10/0) = pig details + eyes + fill")
+        print("  🔴 Metal3.drawing (30/0) = pig snout + key + fill")
+        print()
+        print("DRC fixes applied:")
+        print("  ✅ Border uses 4 separate rectangles (no self-touching corners)")
+        print("  ✅ Text disabled (gdstk.text creates self-touching polygons)")
+        print("  ✅ All geometry is simple rectangles (DRC-safe)")
 
 
 if __name__ == '__main__':
