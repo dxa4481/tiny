@@ -117,35 +117,21 @@ FILL_PITCH = FILL_SIZE + FILL_SPACING  # 4.75µm pitch
 ART_BUFFER = 0.5     # 0.5µm clearance around art (very tight)
 
 # =============================================================================
-# Fill Blockage for Optical Microscope Visibility
+# Fill Exclusion for Optical Microscope Visibility
 # =============================================================================
 # To see the art under an optical microscope WITHOUT dissolving metal fill:
-# 1. Block fill on ALL metal layers directly ABOVE the art region
+# 1. Don't add fill on Metal1-3 in the art regions (already handled by exclusion zones)
 # 2. Exclude the power rail region from fill (they run vertically on the left)
+# 3. Don't add ANY geometry on Metal4/5/TopMetal above the art
 #
-# For IHP-SG13G2, we add fill blockage shapes on higher metal layers.
-# The fab's automated fill tools will see these and skip these regions.
+# Key insight: For TinyTapeout custom GDS, WE control all the fill. The fab
+# doesn't add additional fill to our custom GDS regions. So by simply NOT
+# adding fill above the art, the art remains visible under optical microscope.
 #
-# Layer definitions for fill blockage:
-# - Metal4.drawing  = 50/0  (signal pins layer, but can also have geometry)
-# - Metal5.drawing  = 67/0  (if available in IHP stack)
-# - TopMetal1.drawing = 126/0 (power rails layer)
-# - TopMetal2.drawing = 134/0 (top metal)
-#
-# Note: We use .drawing datatype (0) as it's the only fabricated datatype
-# in TinyTapeout's whitelist. The fill blockage works because our shapes
-# occupy the space where fill would otherwise be placed.
+# NOTE: We do NOT add "fill blockage" shapes on higher layers because:
+# - Solid metal shapes would OBSCURE the art (opposite of what we want!)
+# - TinyTapeout doesn't have .nofill layers in the whitelist anyway
 # =============================================================================
-
-# Higher metal layers for fill blockage (to make art visible from above)
-FILL_BLOCK_LAYERS = [
-    # Note: We intentionally DON'T add blockage on Metal1-3 as that's where art is
-    # Metal4, Metal5, TopMetal use these layer numbers:
-    {'layer': 50,  'datatype': 0, 'name': 'Metal4.drawing'},   # Above art
-    {'layer': 67,  'datatype': 0, 'name': 'Metal5.drawing'},   # Above art
-    # Skip TopMetal1 (126) as it has power pins
-    {'layer': 134, 'datatype': 0, 'name': 'TopMetal2.drawing'}, # Top layer
-]
 
 # Power rail region to exclude from fill (left edge of die)
 # VPWR is at x=8.0, VGND is at x=5.0, both with width 1.8µm
@@ -393,73 +379,6 @@ def get_art_exclusion_zone(cell, buffer_distance, pig_bounds, text_bounds, inclu
     return []
 
 
-def add_fill_blockage_for_visibility(cell, pig_bounds, text_bounds, border_bounds=None):
-    """
-    Add fill blockage shapes on HIGHER metal layers (Metal4, Metal5, TopMetal2)
-    to prevent fab-added fill from obscuring the art when viewing with an 
-    optical microscope.
-    
-    The strategy:
-    1. Create rectangles covering the art regions on higher metal layers
-    2. These rectangles "occupy" the space so fill tools skip these areas
-    3. The art on lower layers (Metal1-3) becomes visible from above
-    
-    Args:
-        cell: The GDS cell to add blockage to
-        pig_bounds: (x1, y1, x2, y2) bounding box of pig area
-        text_bounds: (x1, y1, x2, y2) bounding box of text area  
-        border_bounds: (x1, y1, x2, y2) bounding box of border (optional)
-    
-    Returns:
-        Number of blockage shapes added
-    """
-    import gdstk
-    from create_silicon_art import DIE_HEIGHT_UM
-    
-    blockage_count = 0
-    buffer = 1.0  # 1µm buffer around art for blockage
-    
-    # Combine all art bounds into regions to block
-    regions_to_block = []
-    
-    if pig_bounds:
-        x1, y1, x2, y2 = pig_bounds
-        regions_to_block.append((x1 - buffer, y1 - buffer, x2 + buffer, y2 + buffer))
-    
-    if text_bounds:
-        x1, y1, x2, y2 = text_bounds
-        regions_to_block.append((x1 - buffer, y1 - buffer, x2 + buffer, y2 + buffer))
-    
-    if border_bounds:
-        x1, y1, x2, y2 = border_bounds
-        regions_to_block.append((x1, y1, x2, y2))
-    
-    # Add power rail region (left edge)
-    regions_to_block.append((0, 0, POWER_RAIL_EXCLUSION_X, DIE_HEIGHT_UM))
-    
-    # Add blockage rectangles on each higher metal layer
-    for layer_info in FILL_BLOCK_LAYERS:
-        layer = layer_info['layer']
-        datatype = layer_info['datatype']
-        name = layer_info['name']
-        
-        for (x1, y1, x2, y2) in regions_to_block:
-            # Ensure bounds are within die
-            x1 = max(0, x1)
-            y1 = max(0, y1)
-            x2 = min(DIE_WIDTH_UM, x2)
-            y2 = min(DIE_HEIGHT_UM, y2)
-            
-            if x2 > x1 and y2 > y1:
-                rect = gdstk.rectangle(
-                    (x1, y1), (x2, y2),
-                    layer=layer,
-                    datatype=datatype
-                )
-                cell.add(rect)
-                blockage_count += 1
-    
-    return blockage_count
 
 
 def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top, exclusion_zone):
@@ -830,29 +749,14 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         count = add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top, exclusion_zone)
         print(f"  {name}: added {count} fill squares ({count * FILL_SIZE**2:.0f} µm²)")
     
-    # -------------------------------------------------------------------------
-    # 9. Add fill blockage on higher metal layers for optical microscope visibility
-    # -------------------------------------------------------------------------
-    # This creates solid rectangles on Metal4, Metal5, TopMetal2 layers
-    # above the art region. These block any fab-added fill that would
-    # otherwise obscure the art when viewing from above with a microscope.
-    #
-    # Key insight: Optical microscopes look from ABOVE, so metal on higher
-    # layers obscures what's below. By placing our own shapes, we prevent
-    # the fab's automated fill from being placed there.
     print()
-    print("Adding fill blockage for optical microscope visibility...")
-    print("  (Solid shapes on Metal4/Metal5/TopMetal2 above art region)")
-    
-    # Define border bounds for blockage
-    border_bounds = (outer_x1, outer_y1, outer_x2, outer_y2)
-    
-    blockage_count = add_fill_blockage_for_visibility(cell, pig_bounds, text_bounds, border_bounds)
-    print(f"  Added {blockage_count} fill blockage shapes")
-    print("  Art will be visible under optical microscope without acid etching!")
+    print("🔬 Optical microscope visibility:")
+    print("  ✓ No fill above art regions (art is visible from above)")
+    print("  ✓ Power rail region excluded from fill (left edge)")
+    print("  ✓ No metal on Metal4/5/TopMetal above art")
     
     # -------------------------------------------------------------------------
-    # 10. Save files
+    # 9. Save files
     # -------------------------------------------------------------------------
     gds_path = output_path / f"{TOP_MODULE}.gds"
     lib.write_gds(gds_path)
@@ -1071,14 +975,15 @@ def main():
         print("  ✅ All geometry is simple rectangles (DRC-safe)")
         print()
         print("🔬 OPTICAL MICROSCOPE VISIBILITY:")
-        print("  ✅ Fill blocked above art on Metal4/Metal5/TopMetal2")
-        print("  ✅ Power rail region excluded from fill (left edge)")
+        print("  ✅ No fill placed above art regions")
+        print("  ✅ No metal on Metal4/5/TopMetal above art (clear view from top)")
+        print("  ✅ Power rail region excluded from fill (left edge visible)")
         print("  ✅ Art visible under optical microscope WITHOUT acid etching!")
         print()
         print("Viewing tips:")
         print("  - Use 50-500x magnification")
         print("  - Metallurgical/reflected light microscope works best")
-        print("  - Art is on Metal1-3 layers (visible without delayering)")
+        print("  - Art is on Metal1-3 layers (visible from top without delayering)")
 
 
 if __name__ == '__main__':
