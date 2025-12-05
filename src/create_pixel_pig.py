@@ -114,7 +114,7 @@ GRID_HEIGHT = 12
 FILL_SIZE = 2.5      # 2.5µm x 2.5µm fill squares (larger = more coverage)
 FILL_SPACING = 0.5   # 0.5µm gap between fills (above 0.21µm min spacing)
 FILL_PITCH = FILL_SIZE + FILL_SPACING  # 3µm pitch
-ART_BUFFER = 2.0     # 2µm clearance around art (minimum for visibility while meeting density)
+ART_BUFFER = 8.0     # 8µm clearance around art for clear visibility
 
 
 def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top):
