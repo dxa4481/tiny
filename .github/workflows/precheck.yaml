@@ -163,9 +163,10 @@ jobs:
               required_pins.extend([f'ui_in[{i}]', f'uo_out[{i}]', f'uio_in[{i}]', f'uio_out[{i}]', f'uio_oe[{i}]'])
 
           for pin in required_pins:
-              # Escape brackets for regex
-              pin_escaped = pin.replace('[', r'\[').replace(']', r'\]')
-              if not re.search(rf'PIN {pin_escaped}\b', content):
+              # Escape brackets for regex, use \s or $ after pin name instead of \b
+              # (word boundary doesn't work after ] since ] is not a word character)
+              pin_escaped = re.escape(pin)
+              if not re.search(rf'PIN {pin_escaped}[\s\n]', content):
                   errors.append(f"Missing required pin: {pin}")
 
           if errors:
