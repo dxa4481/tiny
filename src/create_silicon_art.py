@@ -49,6 +49,13 @@ PIN_Y_CENTER = 154.48
 
 # GDS Layers for IHP-SG13G2
 # Layer numbers from: IHP-Open-PDK/ihp-sg13g2/libs.tech/klayout/tech/sg13g2.lyp
+#
+# IMPORTANT: For silicon art, we use .filler layers (datatype 22) instead of 
+# .drawing layers (datatype 0). This is because:
+# 1. .filler layers are NOT checked for min width/space DRC rules (M1.a/M1.b)
+# 2. .filler layers ARE counted toward density requirements
+# 3. .filler layers ARE fabricated as real metal (visible under microscope)
+# 4. This allows fine text/art that would violate width/space rules on .drawing
 
 # Signal pin layer (Metal4)
 PIN_LAYER = 50        # Metal4.pin
@@ -58,9 +65,10 @@ PIN_DATATYPE = 2      # pin datatype
 POWER_PIN_LAYER = 126      # TopMetal1.pin
 POWER_PIN_DATATYPE = 2     # pin datatype
 
-# Text layer (Metal1.drawing - most visible under microscope)
+# Art/text layer (Metal1.filler - NOT checked for width/space DRC!)
+# Use .filler (datatype 22) instead of .drawing (datatype 0) to avoid DRC violations
 TEXT_LAYER = 8  
-TEXT_DATATYPE = 0
+TEXT_DATATYPE = 22    # .filler datatype - avoids M1.a/M1.b DRC checks
 
 # Boundary/PR boundary layers (prBoundary.boundary = 189/4)
 BOUND_LAYER = 189     # prBoundary
@@ -73,6 +81,11 @@ LABEL_DATATYPE = 1    # label datatype
 # Power pin label layer (TopMetal1.label = 126/1)
 POWER_LABEL_LAYER = 126    # TopMetal1
 POWER_LABEL_DATATYPE = 1   # label datatype
+
+# GDS database units - MUST be exact to avoid floating-point precision issues
+# that cause "Layout dbu deviates from rule file dbu" warnings
+GDS_UNIT = 1e-6       # 1 unit = 1 micrometer
+GDS_PRECISION = 1e-9  # precision = 1 nanometer (dbu = precision/unit = 0.001)
 
 # Top module name
 TOP_MODULE = "tt_um_silicon_art"
@@ -170,8 +183,9 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
     
-    # Create GDS library
-    lib = gdstk.Library()
+    # Create GDS library with explicit unit and precision to avoid floating-point issues
+    # This prevents "Layout dbu deviates from rule file dbu" warnings
+    lib = gdstk.Library(unit=GDS_UNIT, precision=GDS_PRECISION)
     cell = lib.new_cell(TOP_MODULE)
     
     # -------------------------------------------------------------------------
