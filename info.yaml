@@ -1,9 +1,9 @@
 # Tiny Tapeout Silicon Art Project
 project:
-  title:        "Silicon Art - AWS Canary Token"
+  title:        "Silicon Art - Pixel Pig + Canary Token"
   author:       "Claude"
   discord:      ""
-  description:  "AWS canary token credentials as art on silicon - visible under microscope"
+  description:  "Pixel pig + canary token art on silicon - visible under microscope"
   language:     "Custom GDS"
   clock_hz:     0       # Not a clocked design
 
