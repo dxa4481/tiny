@@ -345,6 +345,7 @@ def generate_lef():
     - Die size must match template DEF exactly (202.08 x 154.98)
     - Pin positions must match template DEF exactly
     - Layer name must be "Metal4" (capital M) for IHP PDK
+    - All coordinates must have decimal points (e.g., 0.000 not 0)
     """
     lef = f"""VERSION 5.8 ;
 BUSBITCHARS "[]" ;
@@ -352,8 +353,8 @@ DIVIDERCHAR "/" ;
 
 MACRO {TOP_MODULE}
   CLASS BLOCK ;
-  FOREIGN {TOP_MODULE} 0 0 ;
-  ORIGIN 0 0 ;
+  FOREIGN {TOP_MODULE} 0.000 0.000 ;
+  ORIGIN 0.000 0.000 ;
   SIZE {DIE_WIDTH_UM:.3f} BY {DIE_HEIGHT_UM:.3f} ;
   SYMMETRY X Y ;
 """

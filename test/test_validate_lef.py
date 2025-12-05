@@ -33,13 +33,13 @@ DIVIDERCHAR "/" ;
 
 MACRO tt_um_silicon_art
   CLASS BLOCK ;
-  FOREIGN tt_um_silicon_art 0 0 ;
-  ORIGIN 0 0 ;
+  FOREIGN tt_um_silicon_art 0.000 0.000 ;
+  ORIGIN 0.000 0.000 ;
   SIZE {DIE_WIDTH_UM:.3f} BY {DIE_HEIGHT_UM:.3f} ;
   SYMMETRY X Y ;
 """
     
-    # Add power pins with Metal4 (capital M for IHP)
+    # Add power pins with TopMetal1 (required for IHP)
     power_width = 1.5
     for pin_name, use_type in EXPECTED_POWER_PINS:
         x_pos = 5.0 if pin_name == "VGND" else 8.0
@@ -48,7 +48,7 @@ MACRO tt_um_silicon_art
     DIRECTION INOUT ;
     USE {use_type} ;
     PORT
-      LAYER Metal4 ;
+      LAYER TopMetal1 ;
         RECT {x_pos - power_width/2:.3f} 5.000 {x_pos + power_width/2:.3f} 149.980 ;
     END
   END {pin_name}
@@ -153,7 +153,7 @@ class TestParseLefPins:
     DIRECTION INOUT ;
     USE GROUND ;
     PORT
-      LAYER Metal4 ;
+      LAYER TopMetal1 ;
         RECT 4.25 5.00 5.75 149.98 ;
     END
   END VGND
@@ -161,7 +161,7 @@ class TestParseLefPins:
         pins = parse_lef_pins(content)
         assert "VGND" in pins
         assert pins["VGND"]["use"] == "GROUND"
-        assert pins["VGND"]["layer"] == "Metal4"
+        assert pins["VGND"]["layer"] == "TopMetal1"
 
 
 class TestValidateLef:
