@@ -1,0 +1,187 @@
+name: precheck
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  precheck:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install gdstk
+
+      - name: Generate GDS
+        run: |
+          cd src
+          python create_pixel_pig.py --output ../gds
+          ls -la ../gds/
+
+      - name: Validate layers
+        run: |
+          python3 << 'EOF'
+          import gdstk
+          import sys
+
+          # IHP-SG13G2 valid layers (subset of what precheck expects)
+          VALID_LAYERS = {
+              # Metal layers (drawing)
+              (8, 0),   # Metal1.drawing
+              (10, 0),  # Metal2.drawing
+              (30, 0),  # Metal3.drawing
+              (50, 0),  # Metal4.drawing
+              (67, 0),  # Metal5.drawing
+              (126, 0), # TopMetal1.drawing
+              # Pin layers
+              (8, 2),   # Metal1.pin
+              (10, 2),  # Metal2.pin
+              (30, 2),  # Metal3.pin
+              (50, 2),  # Metal4.pin
+              (67, 2),  # Metal5.pin
+              (126, 2), # TopMetal1.pin
+              # Label layers
+              (8, 1),   # Metal1.label
+              (10, 1),  # Metal2.label
+              (30, 1),  # Metal3.label
+              (50, 1),  # Metal4.label
+              (67, 1),  # Metal5.label
+              (126, 1), # TopMetal1.label
+              # Boundary
+              (189, 4), # prBoundary.boundary
+              (189, 0), # prBoundary.drawing
+              (189, 1), # prBoundary.label
+          }
+
+          lib = gdstk.read_gds('gds/tt_um_silicon_art.gds')
+          cell = lib.cells[0]
+
+          errors = []
+          layers_found = set()
+
+          for poly in cell.polygons:
+              layers_found.add((poly.layer, poly.datatype))
+          for label in cell.labels:
+              layers_found.add((label.layer, label.texttype))
+
+          print("Layers found in GDS:")
+          for l in sorted(layers_found):
+              status = "✅" if l in VALID_LAYERS else "❌"
+              print(f"  {status} {l[0]}/{l[1]}")
+              if l not in VALID_LAYERS:
+                  errors.append(f"Invalid layer: {l[0]}/{l[1]}")
+
+          # Check for prBoundary
+          if (189, 4) not in layers_found:
+              errors.append("Missing prBoundary.boundary layer (189/4)")
+
+          # Check bounding box matches boundary
+          bbox = cell.bounding_box()
+          print(f"\nBounding box: {bbox}")
+
+          # Expected die size for IHP 1x1 tile
+          expected = ((0.0, 0.0), (202.08, 154.98))
+          if bbox != expected:
+              errors.append(f"Bounding box {bbox} does not match expected {expected}")
+
+          if errors:
+              print("\n❌ Precheck FAILED:")
+              for e in errors:
+                  print(f"  - {e}")
+              sys.exit(1)
+          else:
+              print("\n✅ Layer validation passed")
+          EOF
+
+      - name: Validate LEF
+        run: |
+          python3 << 'EOF'
+          import re
+          import sys
+
+          with open('gds/tt_um_silicon_art.lef') as f:
+              content = f.read()
+
+          errors = []
+
+          # Check MACRO name
+          macro_match = re.search(r'MACRO\s+(\w+)', content)
+          if not macro_match:
+              errors.append("No MACRO definition found")
+          else:
+              macro_name = macro_match.group(1)
+              if not macro_name.startswith("tt_um_"):
+                  errors.append(f"MACRO name '{macro_name}' must start with 'tt_um_'")
+              print(f"MACRO: {macro_name}")
+
+          # Check SIZE matches IHP 1x1 tile
+          size_match = re.search(r'SIZE\s+([\d.]+)\s+BY\s+([\d.]+)', content)
+          if size_match:
+              width = float(size_match.group(1))
+              height = float(size_match.group(2))
+              print(f"SIZE: {width} x {height} µm")
+              if abs(width - 202.08) > 0.01 or abs(height - 154.98) > 0.01:
+                  errors.append(f"SIZE {width}x{height} doesn't match IHP 1x1 tile (202.08x154.98)")
+          else:
+              errors.append("No SIZE definition found")
+
+          # Check power pins use TopMetal1
+          for pin in ['VPWR', 'VGND']:
+              pin_match = re.search(rf'PIN {pin}\s+.*?LAYER\s+(\w+)', content, re.DOTALL)
+              if pin_match:
+                  layer = pin_match.group(1)
+                  if layer != 'TopMetal1':
+                      errors.append(f"{pin} must use TopMetal1 layer, found {layer}")
+                  print(f"{pin}: layer {layer}")
+              else:
+                  errors.append(f"Missing power pin {pin}")
+
+          # Check signal pins use Metal4
+          for pin in ['clk', 'ena', 'rst_n']:
+              pin_match = re.search(rf'PIN {pin}\s+.*?LAYER\s+(\w+)', content, re.DOTALL)
+              if pin_match:
+                  layer = pin_match.group(1)
+                  if layer != 'Metal4':
+                      errors.append(f"{pin} must use Metal4 layer, found {layer}")
+              else:
+                  errors.append(f"Missing signal pin {pin}")
+
+          # Check for all required pins
+          required_pins = ['clk', 'ena', 'rst_n', 'VPWR', 'VGND']
+          for i in range(8):
+              required_pins.extend([f'ui_in[{i}]', f'uo_out[{i}]', f'uio_in[{i}]', f'uio_out[{i}]', f'uio_oe[{i}]'])
+
+          for pin in required_pins:
+              # Escape brackets for regex, use \s or $ after pin name instead of \b
+              # (word boundary doesn't work after ] since ] is not a word character)
+              pin_escaped = re.escape(pin)
+              if not re.search(rf'PIN {pin_escaped}[\s\n]', content):
+                  errors.append(f"Missing required pin: {pin}")
+
+          if errors:
+              print("\n❌ LEF validation FAILED:")
+              for e in errors:
+                  print(f"  - {e}")
+              sys.exit(1)
+          else:
+              print(f"\n✅ LEF validation passed ({len(required_pins)} pins verified)")
+          EOF
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: precheck_results
+          path: |
+            gds/

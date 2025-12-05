@@ -26,6 +26,8 @@ from create_silicon_art import (
     DIE_WIDTH_UM, DIE_HEIGHT_UM,
     PIN_WIDTH, PIN_HEIGHT, PIN_Y_CENTER,
     PIN_LAYER, PIN_DATATYPE,
+    POWER_PIN_LAYER, POWER_PIN_DATATYPE,
+    POWER_LABEL_LAYER, POWER_LABEL_DATATYPE,
     TEXT_LAYER, TEXT_DATATYPE,
     BOUND_LAYER, BOUND_DATATYPE,
     LABEL_LAYER, LABEL_DATATYPE,
@@ -36,17 +38,17 @@ from create_silicon_art import (
 
 # =============================================================================
 # IHP-SG13G2 Layer Definitions for Pixel Art
-# Using different metal layers for different colors
+# Layer numbers from: IHP-Open-PDK/ihp-sg13g2/libs.tech/klayout/tech/sg13g2.lyp
+# Using Metal1, Metal2, Metal3 .drawing layers for artwork
 # =============================================================================
 
-# 5 colors mapped to IHP metal layers (all datatype 0 for visibility)
-# Using only Metal1, Metal2, Metal3 which are known to be visible in GDS viewer
+# 5 colors mapped to IHP metal layers (all datatype 0 = drawing)
 PIXEL_LAYERS = {
-    'light_pink':  {'layer': 8,   'datatype': 0, 'name': 'Metal1'},   # Body (same as text)
-    'dark_pink':   {'layer': 10,  'datatype': 0, 'name': 'Metal2'},   # Details/ears  
-    'medium_pink': {'layer': 30,  'datatype': 0, 'name': 'Metal3'},   # Snout
-    'golden':      {'layer': 30,  'datatype': 0, 'name': 'Metal3'},   # Key (same as snout - both visible)
-    'black':       {'layer': 10,  'datatype': 0, 'name': 'Metal2'},   # Eyes (same as dark - visible as dark)
+    'light_pink':  {'layer': 8,   'datatype': 0, 'name': 'Metal1.drawing'},   # Body (same as text)
+    'dark_pink':   {'layer': 10,  'datatype': 0, 'name': 'Metal2.drawing'},   # Details/ears  
+    'medium_pink': {'layer': 30,  'datatype': 0, 'name': 'Metal3.drawing'},   # Snout
+    'golden':      {'layer': 30,  'datatype': 0, 'name': 'Metal3.drawing'},   # Key (same as snout - both visible)
+    'black':       {'layer': 10,  'datatype': 0, 'name': 'Metal2.drawing'},   # Eyes (same as dark - visible as dark)
 }
 
 # =============================================================================
@@ -148,22 +150,22 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 3. Add power pins
+    # 3. Add power pins on TopMetal1 (required by TinyTapeout precheck)
     # -------------------------------------------------------------------------
     for pin_name, use_type, x_pos in POWER_PINS:
         power_rect = gdstk.rectangle(
             (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
             (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
-            layer=PIN_LAYER,
-            datatype=PIN_DATATYPE
+            layer=POWER_PIN_LAYER,
+            datatype=POWER_PIN_DATATYPE
         )
         cell.add(power_rect)
         
         label = gdstk.Label(
             pin_name,
             (x_pos, (POWER_PIN_Y_START + POWER_PIN_Y_END) / 2),
-            layer=LABEL_LAYER,
-            texttype=LABEL_DATATYPE
+            layer=POWER_LABEL_LAYER,
+            texttype=POWER_LABEL_DATATYPE
         )
         cell.add(label)
     
@@ -342,6 +344,7 @@ MACRO {TOP_MODULE}
   SYMMETRY X Y ;
 """
     
+    # Power pins on TopMetal1 (required by TinyTapeout precheck)
     for pin_name, use_type, x_pos in POWER_PINS:
         llx = x_pos - POWER_PIN_WIDTH/2
         urx = x_pos + POWER_PIN_WIDTH/2
@@ -350,12 +353,13 @@ MACRO {TOP_MODULE}
     DIRECTION INOUT ;
     USE {use_type} ;
     PORT
-      LAYER Metal4 ;
+      LAYER TopMetal1 ;
         RECT {llx:.3f} {POWER_PIN_Y_START:.3f} {urx:.3f} {POWER_PIN_Y_END:.3f} ;
     END
   END {pin_name}
 """
     
+    # Signal pins on Metal4
     for pin_name, direction, x_pos in SIGNAL_PINS:
         llx = x_pos - PIN_WIDTH/2
         lly = PIN_Y_CENTER - PIN_HEIGHT/2
@@ -429,13 +433,15 @@ def create_svg_preview(lib, output_path, width=1000, height=600):
     padding = 40
     scale = min((width - 2*padding) / cell_width, (height - 2*padding) / cell_height)
     
-    # IHP layer colors (only Metal1-4 and boundary)
+    # IHP layer colors (Metal1-4, TopMetal1, and prBoundary)
+    # Layer numbers from IHP-Open-PDK sg13g2.lyp
     colors = {
-        8:   '#4169E1',  # Metal1 - Blue (text + pig body)
-        10:  '#32CD32',  # Metal2 - Green (pig details + eyes)
-        30:  '#FF6347',  # Metal3 - Tomato (pig snout + key)
-        36:  '#9370DB',  # Metal4 - Purple (pins)
-        63:  '#CCCCCC',  # prBndry - Gray (boundary)
+        8:   '#4169E1',  # Metal1.drawing - Blue (text + pig body)
+        10:  '#32CD32',  # Metal2.drawing - Green (pig details + eyes)
+        30:  '#FF6347',  # Metal3.drawing - Tomato (pig snout + key)
+        50:  '#9370DB',  # Metal4.pin - Purple (signal pins)
+        126: '#FFD700',  # TopMetal1.pin - Gold (power pins)
+        189: '#CCCCCC',  # prBoundary.boundary - Gray (boundary)
     }
     
     svg_parts = [
@@ -448,7 +454,7 @@ def create_svg_preview(lib, output_path, width=1000, height=600):
     for poly in cell.polygons:
         layer = poly.layer
         color = colors.get(layer, '#888888')
-        opacity = 0.3 if layer == 63 else 0.9
+        opacity = 0.3 if layer == 189 else 0.9
         points_str = ' '.join(f'{p[0]},{p[1]}' for p in poly.points)
         svg_parts.append(
             f'    <polygon points="{points_str}" fill="{color}" '
