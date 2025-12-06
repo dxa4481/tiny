@@ -1,6 +1,4 @@
 name: precheck
-# FIXED: Use custom_gds workflow for silicon art submission
-# The previous version used standard synthesis which ignored our pixel art!
 
 on:
   push:
@@ -32,17 +30,14 @@ jobs:
           python create_pixel_pig.py --output ../gds
           ls -la ../gds/
 
-      - name: Create PNG preview (fallback for custom_gds action)
+      - name: Create PNG preview
         run: |
           rsvg-convert -w 1024 -h 768 gds/preview.svg -o gds_render.png
-          echo "Created fallback gds_render.png"
           ls -la gds_render.png
 
-      # CRITICAL FIX: Use custom_gds action instead of standard synthesis!
-      # The standard TinyTapeout action synthesizes Verilog, ignoring our pixel art.
-      # The custom_gds action uses our pre-generated GDS with the artwork.
+      # Use custom_gds action for silicon art (pre-generated GDS, not Verilog synthesis)
       - name: Build with Custom GDS
-        uses: TinyTapeout/tt-gds-action/custom_gds@ttihp25a
+        uses: TinyTapeout/tt-gds-action/custom_gds@ttihp26a
         with:
           top_module: tt_um_silicon_art
           gds_path: gds/tt_um_silicon_art.gds
@@ -54,5 +49,4 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Run Tiny Tapeout Precheck
-        uses: TinyTapeout/tt-gds-action/precheck@ttihp25a
-
+        uses: TinyTapeout/tt-gds-action/precheck@ttihp26a
