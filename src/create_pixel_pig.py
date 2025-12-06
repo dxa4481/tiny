@@ -119,6 +119,8 @@ ART_BUFFER = 0.5     # 0.5µm clearance around art (very tight)
 ENABLE_DENSITY_FILL = False  # Disable density fill to reduce DRC violations
 ENABLE_TEXT = False  # Disable text to reduce DRC violations  
 ENABLE_BORDER = False  # Disable border to reduce DRC violations
+ENABLE_PIG = False  # Disable pig art to test if DRC issues are from wrapper
+ENABLE_POWER_PINS = False  # Disable power pins - wrapper may provide them
 
 # =============================================================================
 # Pixel Font Definition (5x7 characters)
@@ -450,24 +452,27 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 3. Add power pins on TopMetal1 (required by TinyTapeout precheck)
+    # 3. Add power pins on TopMetal1 (may conflict with wrapper power grid)
     # -------------------------------------------------------------------------
-    for pin_name, use_type, x_pos in POWER_PINS:
-        power_rect = gdstk.rectangle(
-            (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
-            (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
-            layer=POWER_PIN_LAYER,
-            datatype=POWER_PIN_DATATYPE
-        )
-        cell.add(power_rect)
-        
-        label = gdstk.Label(
-            pin_name,
-            (x_pos, (POWER_PIN_Y_START + POWER_PIN_Y_END) / 2),
-            layer=POWER_LABEL_LAYER,
-            texttype=POWER_LABEL_DATATYPE
-        )
-        cell.add(label)
+    if ENABLE_POWER_PINS:
+        for pin_name, use_type, x_pos in POWER_PINS:
+            power_rect = gdstk.rectangle(
+                (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
+                (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
+                layer=POWER_PIN_LAYER,
+                datatype=POWER_PIN_DATATYPE
+            )
+            cell.add(power_rect)
+            
+            label = gdstk.Label(
+                pin_name,
+                (x_pos, (POWER_PIN_Y_START + POWER_PIN_Y_END) / 2),
+                layer=POWER_LABEL_LAYER,
+                texttype=POWER_LABEL_DATATYPE
+            )
+            cell.add(label)
+    else:
+        print("Power pins: DISABLED (wrapper provides power grid)")
     
     # -------------------------------------------------------------------------
     # 4. Calculate layout areas - pig centered in available area
@@ -483,56 +488,59 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     # -------------------------------------------------------------------------
     # 5. Add pixel pig - bottom portion of available area
     # -------------------------------------------------------------------------
-    
-    # Size pig to take about 45% of available width (leaving room for text above)
-    pig_area_width = available_width * 0.45
-    pig_area_height = available_height * 0.50  # Bottom half for pig
-    
-    max_pixel_by_width = pig_area_width / GRID_WIDTH
-    max_pixel_by_height = pig_area_height / GRID_HEIGHT
-    pixel_size = min(max_pixel_by_width, max_pixel_by_height) * 0.90
-    
-    # Ensure pixel size meets minimum DRC requirements (0.20µm for all metals)
-    MIN_PIXEL_SIZE = 0.5  # Well above 0.20µm minimum
-    pixel_size = max(pixel_size, MIN_PIXEL_SIZE)
-    
-    pig_width = GRID_WIDTH * pixel_size
-    pig_height = GRID_HEIGHT * pixel_size
-    
-    # Position pig in bottom-left
+    pig_width = 0
+    pig_height = 0
     pig_offset_x = margin_left + 5.0
     pig_offset_y = margin_bottom + 5.0
     
-    print(f"Pig pixel size: {pixel_size:.2f} µm (min DRC: 0.20 µm)")
-    print(f"Pig dimensions: {pig_width:.1f} x {pig_height:.1f} µm")
-    print(f"Pig position: ({pig_offset_x:.1f}, {pig_offset_y:.1f})")
-    
-    # Add all pig pixels
-    pixel_data = [
-        ('light_pink', LIGHT_PINK_PIXELS),
-        ('dark_pink', DARK_PINK_PIXELS),
-        ('medium_pink', MEDIUM_PINK_PIXELS),
-        ('golden', GOLDEN_PIXELS),
-        ('black', BLACK_PIXELS),
-    ]
-    
-    total_pixels = 0
-    for color_name, positions in pixel_data:
-        layer_info = PIXEL_LAYERS[color_name]
-        for (gx, gy) in positions:
-            x = pig_offset_x + gx * pixel_size
-            y = pig_offset_y + gy * pixel_size
-            
-            rect = gdstk.rectangle(
-                (x, y),
-                (x + pixel_size, y + pixel_size),
-                layer=layer_info['layer'],
-                datatype=layer_info['datatype']
-            )
-            cell.add(rect)
-            total_pixels += 1
-    
-    print(f"Pig pixels: {total_pixels}")
+    if ENABLE_PIG:
+        # Size pig to take about 45% of available width (leaving room for text above)
+        pig_area_width = available_width * 0.45
+        pig_area_height = available_height * 0.50  # Bottom half for pig
+        
+        max_pixel_by_width = pig_area_width / GRID_WIDTH
+        max_pixel_by_height = pig_area_height / GRID_HEIGHT
+        pixel_size = min(max_pixel_by_width, max_pixel_by_height) * 0.90
+        
+        # Ensure pixel size meets minimum DRC requirements (0.20µm for all metals)
+        MIN_PIXEL_SIZE = 0.5  # Well above 0.20µm minimum
+        pixel_size = max(pixel_size, MIN_PIXEL_SIZE)
+        
+        pig_width = GRID_WIDTH * pixel_size
+        pig_height = GRID_HEIGHT * pixel_size
+        
+        print(f"Pig pixel size: {pixel_size:.2f} µm (min DRC: 0.20 µm)")
+        print(f"Pig dimensions: {pig_width:.1f} x {pig_height:.1f} µm")
+        print(f"Pig position: ({pig_offset_x:.1f}, {pig_offset_y:.1f})")
+        
+        # Add all pig pixels
+        pixel_data = [
+            ('light_pink', LIGHT_PINK_PIXELS),
+            ('dark_pink', DARK_PINK_PIXELS),
+            ('medium_pink', MEDIUM_PINK_PIXELS),
+            ('golden', GOLDEN_PIXELS),
+            ('black', BLACK_PIXELS),
+        ]
+        
+        total_pixels = 0
+        for color_name, positions in pixel_data:
+            layer_info = PIXEL_LAYERS[color_name]
+            for (gx, gy) in positions:
+                x = pig_offset_x + gx * pixel_size
+                y = pig_offset_y + gy * pixel_size
+                
+                rect = gdstk.rectangle(
+                    (x, y),
+                    (x + pixel_size, y + pixel_size),
+                    layer=layer_info['layer'],
+                    datatype=layer_info['datatype']
+                )
+                cell.add(rect)
+                total_pixels += 1
+        
+        print(f"Pig pixels: {total_pixels}")
+    else:
+        print("Pig art: DISABLED (testing if DRC issues are from wrapper)")
     
     # -------------------------------------------------------------------------
     # 6. Add canary token text using DRC-safe pixel font
@@ -767,11 +775,12 @@ MACRO {TOP_MODULE}
   SYMMETRY X Y ;
 """
     
-    # Power pins on TopMetal1 (required by TinyTapeout precheck)
-    for pin_name, use_type, x_pos in POWER_PINS:
-        llx = x_pos - POWER_PIN_WIDTH/2
-        urx = x_pos + POWER_PIN_WIDTH/2
-        lef += f"""
+    # Power pins on TopMetal1 (only if enabled - wrapper may provide them)
+    if ENABLE_POWER_PINS:
+        for pin_name, use_type, x_pos in POWER_PINS:
+            llx = x_pos - POWER_PIN_WIDTH/2
+            urx = x_pos + POWER_PIN_WIDTH/2
+            lef += f"""
   PIN {pin_name}
     DIRECTION INOUT ;
     USE {use_type} ;
