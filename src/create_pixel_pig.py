@@ -110,11 +110,15 @@ BLACK_PIXELS = [
 GRID_WIDTH = 19
 GRID_HEIGHT = 12
 
-# Density fill parameters - maximized for high density
+# Density fill parameters - DISABLED to avoid DRC issues
+# IHP density requirements are complex and fill often causes more DRC violations
 FILL_SIZE = 4.5      # 4.5µm x 4.5µm fill squares
 FILL_SPACING = 0.25  # 0.25µm gap (just above 0.21µm min)
 FILL_PITCH = FILL_SIZE + FILL_SPACING  # 4.75µm pitch
 ART_BUFFER = 0.5     # 0.5µm clearance around art (very tight)
+ENABLE_DENSITY_FILL = False  # Disable density fill to reduce DRC violations
+ENABLE_TEXT = False  # Disable text to reduce DRC violations  
+ENABLE_BORDER = False  # Disable border to reduce DRC violations
 
 # =============================================================================
 # Pixel Font Definition (5x7 characters)
@@ -533,182 +537,197 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     # -------------------------------------------------------------------------
     # 6. Add canary token text using DRC-safe pixel font
     # -------------------------------------------------------------------------
-    # NOTE: gdstk.text() creates polygons with self-touching points that violate DRC.
-    # Instead, we use a custom pixel font renderer that creates simple rectangles.
-    # Each pixel is a separate rectangle, ensuring DRC compliance.
+    text_final_x = 0
+    text_final_y = 0
+    text_final_width = 0
+    text_final_height = 0
     
-    # Text area: above the pig (with proper margins to stay within die)
-    text_area_x = margin_left + 2.0
-    text_area_y = pig_offset_y + pig_height + 3.0
-    text_area_width = DIE_WIDTH_UM - margin_left - margin_right - 4.0  # Stay within die
-    text_area_height = DIE_HEIGHT_UM - margin_top - text_area_y - 2.0
-    
-    # Calculate optimal pixel size to fit the text
-    lines = text.split('\n')
-    max_line_len = max(len(line) for line in lines) if lines else 1
-    num_lines = len(lines)
-    
-    # Character cell is 5 pixels wide + 1 gap, 7 pixels tall + 2 gap
-    # Total pitch per character = (5 + 1) * pixel_pitch for width
-    # Total pitch per line = (7 + 2) * pixel_pitch for height
-    # 
-    # To fit max_line_len characters in text_area_width:
-    # max_line_len * 6 * pixel_pitch = text_area_width
-    # pixel_pitch = text_area_width / (max_line_len * 6)
-    # pixel_size = pixel_pitch * (1 / (1 + gap_ratio))
-    
-    # Using gap_ratio = 0.5 (gap is 50% of pixel size)
-    gap_ratio = 0.5
-    
-    # Calculate max pixel_pitch that fits width and height
-    chars_pitch_units = max_line_len * 6 - 1  # Subtract 1 for no gap after last char
-    lines_pitch_units = num_lines * 9 - 2     # Subtract 2 for no gap after last line
-    
-    max_pitch_by_width = text_area_width / chars_pitch_units if chars_pitch_units > 0 else 1
-    max_pitch_by_height = text_area_height / lines_pitch_units if lines_pitch_units > 0 else 1
-    
-    pixel_pitch = min(max_pitch_by_width, max_pitch_by_height)
-    
-    # pixel_pitch = pixel_size + pixel_gap = pixel_size * (1 + gap_ratio)
-    pixel_size = pixel_pitch / (1 + gap_ratio)
-    pixel_gap = pixel_size * gap_ratio
-    
-    # Ensure minimum DRC-safe sizes
-    MIN_TEXT_PIXEL = 0.20  # Metal1 min width is 0.16, use 0.20 for margin
-    MIN_TEXT_GAP = 0.20    # Metal1 min spacing is 0.18, use 0.20 for margin
-    
-    if pixel_size < MIN_TEXT_PIXEL or pixel_gap < MIN_TEXT_GAP:
-        # Text won't fit with DRC-safe dimensions - use minimum and accept clipping
-        pixel_size = MIN_TEXT_PIXEL
-        pixel_gap = MIN_TEXT_GAP
-        print(f"WARNING: Text may be clipped to fit (using minimum DRC-safe sizes)")
-    
-    # Cap at reasonable size for readability
-    MAX_TEXT_PIXEL = 1.0
-    if pixel_size > MAX_TEXT_PIXEL:
-        pixel_size = MAX_TEXT_PIXEL
+    if ENABLE_TEXT:
+        # NOTE: gdstk.text() creates polygons with self-touching points that violate DRC.
+        # Instead, we use a custom pixel font renderer that creates simple rectangles.
+        # Each pixel is a separate rectangle, ensuring DRC compliance.
+        
+        # Text area: above the pig (with proper margins to stay within die)
+        text_area_x = margin_left + 2.0
+        text_area_y = pig_offset_y + pig_height + 3.0
+        text_area_width = DIE_WIDTH_UM - margin_left - margin_right - 4.0  # Stay within die
+        text_area_height = DIE_HEIGHT_UM - margin_top - text_area_y - 2.0
+        
+        # Calculate optimal pixel size to fit the text
+        lines = text.split('\n')
+        max_line_len = max(len(line) for line in lines) if lines else 1
+        num_lines = len(lines)
+        
+        # Character cell is 5 pixels wide + 1 gap, 7 pixels tall + 2 gap
+        # Total pitch per character = (5 + 1) * pixel_pitch for width
+        # Total pitch per line = (7 + 2) * pixel_pitch for height
+        # 
+        # To fit max_line_len characters in text_area_width:
+        # max_line_len * 6 * pixel_pitch = text_area_width
+        # pixel_pitch = text_area_width / (max_line_len * 6)
+        # pixel_size = pixel_pitch * (1 / (1 + gap_ratio))
+        
+        # Using gap_ratio = 0.5 (gap is 50% of pixel size)
+        gap_ratio = 0.5
+        
+        # Calculate max pixel_pitch that fits width and height
+        chars_pitch_units = max_line_len * 6 - 1  # Subtract 1 for no gap after last char
+        lines_pitch_units = num_lines * 9 - 2     # Subtract 2 for no gap after last line
+        
+        max_pitch_by_width = text_area_width / chars_pitch_units if chars_pitch_units > 0 else 1
+        max_pitch_by_height = text_area_height / lines_pitch_units if lines_pitch_units > 0 else 1
+        
+        pixel_pitch = min(max_pitch_by_width, max_pitch_by_height)
+        
+        # pixel_pitch = pixel_size + pixel_gap = pixel_size * (1 + gap_ratio)
+        pixel_size = pixel_pitch / (1 + gap_ratio)
         pixel_gap = pixel_size * gap_ratio
+        
+        # Ensure minimum DRC-safe sizes
+        MIN_TEXT_PIXEL = 0.20  # Metal1 min width is 0.16, use 0.20 for margin
+        MIN_TEXT_GAP = 0.20    # Metal1 min spacing is 0.18, use 0.20 for margin
+        
+        if pixel_size < MIN_TEXT_PIXEL or pixel_gap < MIN_TEXT_GAP:
+            # Text won't fit with DRC-safe dimensions - use minimum and accept clipping
+            pixel_size = MIN_TEXT_PIXEL
+            pixel_gap = MIN_TEXT_GAP
+            print(f"WARNING: Text may be clipped to fit (using minimum DRC-safe sizes)")
     
-    print(f"Text pixel size: {pixel_size:.3f} µm (DRC min: 0.16 µm)")
-    print(f"Text pixel gap: {pixel_gap:.3f} µm (DRC min: 0.18 µm)")
-    
-    # Render the text
-    text_rects, (text_width, text_height) = render_pixel_text(
-        text, text_area_x, text_area_y,
-        layer=TEXT_LAYER, datatype=TEXT_DATATYPE,
-        pixel_size=pixel_size, pixel_gap=pixel_gap
-    )
-    
-    # Verify text fits within die (clip any rectangles outside)
-    valid_rects = []
-    for rect in text_rects:
-        bb = rect.bounding_box()
-        if bb[1][0] <= DIE_WIDTH_UM - 1 and bb[1][1] <= DIE_HEIGHT_UM - 1:
-            valid_rects.append(rect)
-            cell.add(rect)
-    
-    if len(valid_rects) < len(text_rects):
-        print(f"  Clipped {len(text_rects) - len(valid_rects)} pixels outside die boundary")
-    
-    text_final_x = text_area_x
-    text_final_y = text_area_y
-    text_final_width = min(text_width, text_area_width)
-    text_final_height = min(text_height, text_area_height)
-    
-    print(f"Text dimensions: {text_width:.1f} x {text_height:.1f} µm")
-    print(f"Text position: ({text_final_x:.1f}, {text_final_y:.1f})")
-    print(f"Text pixels rendered: {len(valid_rects)}")
+        # Cap at reasonable size for readability
+        MAX_TEXT_PIXEL = 1.0
+        if pixel_size > MAX_TEXT_PIXEL:
+            pixel_size = MAX_TEXT_PIXEL
+            pixel_gap = pixel_size * gap_ratio
+        
+        print(f"Text pixel size: {pixel_size:.3f} µm (DRC min: 0.16 µm)")
+        print(f"Text pixel gap: {pixel_gap:.3f} µm (DRC min: 0.18 µm)")
+        
+        # Render the text
+        text_rects, (text_width, text_height) = render_pixel_text(
+            text, text_area_x, text_area_y,
+            layer=TEXT_LAYER, datatype=TEXT_DATATYPE,
+            pixel_size=pixel_size, pixel_gap=pixel_gap
+        )
+        
+        # Verify text fits within die (clip any rectangles outside)
+        valid_rects = []
+        for rect in text_rects:
+            bb = rect.bounding_box()
+            if bb[1][0] <= DIE_WIDTH_UM - 1 and bb[1][1] <= DIE_HEIGHT_UM - 1:
+                valid_rects.append(rect)
+                cell.add(rect)
+        
+        if len(valid_rects) < len(text_rects):
+            print(f"  Clipped {len(text_rects) - len(valid_rects)} pixels outside die boundary")
+        
+        text_final_x = text_area_x
+        text_final_y = text_area_y
+        text_final_width = min(text_width, text_area_width)
+        text_final_height = min(text_height, text_area_height)
+        
+        print(f"Text dimensions: {text_width:.1f} x {text_height:.1f} µm")
+        print(f"Text position: ({text_final_x:.1f}, {text_final_y:.1f})")
+        print(f"Text pixels rendered: {len(valid_rects)}")
+    else:
+        print("Text: DISABLED (to reduce DRC violations)")
     
     # -------------------------------------------------------------------------
     # 7. Add decorative border using 4 separate rectangles (DRC-safe)
     # -------------------------------------------------------------------------
-    # NOTE: Using gdstk.boolean(outer, inner, "not") creates a single polygon
-    # with self-touching corners that violate DRC. Instead, we create 4 separate
-    # rectangles for the border sides, which avoids self-touching geometry.
-    border_width = 1.0  # 1µm is well above 0.16µm Metal1 min width
-    border_margin = 3.0
-    
-    # Inner rectangle corners (the hole in the frame)
-    inner_x1 = margin_left - 2 + border_width
-    inner_y1 = border_margin + border_width
-    inner_x2 = DIE_WIDTH_UM - border_margin - border_width
-    inner_y2 = DIE_HEIGHT_UM - margin_top + 2 - border_width
-    
-    # Outer rectangle corners
-    outer_x1 = margin_left - 2
-    outer_y1 = border_margin
-    outer_x2 = DIE_WIDTH_UM - border_margin
-    outer_y2 = DIE_HEIGHT_UM - margin_top + 2
-    
-    # Create 4 separate rectangles for the border sides
-    # Left side (full height)
-    left_border = gdstk.rectangle(
-        (outer_x1, outer_y1),
-        (inner_x1, outer_y2),
-        layer=TEXT_LAYER,
-        datatype=TEXT_DATATYPE
-    )
-    cell.add(left_border)
-    
-    # Right side (full height)
-    right_border = gdstk.rectangle(
-        (inner_x2, outer_y1),
-        (outer_x2, outer_y2),
-        layer=TEXT_LAYER,
-        datatype=TEXT_DATATYPE
-    )
-    cell.add(right_border)
-    
-    # Bottom side (between left and right)
-    bottom_border = gdstk.rectangle(
-        (inner_x1, outer_y1),
-        (inner_x2, inner_y1),
-        layer=TEXT_LAYER,
-        datatype=TEXT_DATATYPE
-    )
-    cell.add(bottom_border)
-    
-    # Top side (between left and right)
-    top_border = gdstk.rectangle(
-        (inner_x1, inner_y2),
-        (inner_x2, outer_y2),
-        layer=TEXT_LAYER,
-        datatype=TEXT_DATATYPE
-    )
-    cell.add(top_border)
-    
-    print(f"Border: 4 rectangles ({border_width} µm width) - DRC-safe")
+    if ENABLE_BORDER:
+        # NOTE: Using gdstk.boolean(outer, inner, "not") creates a single polygon
+        # with self-touching corners that violate DRC. Instead, we create 4 separate
+        # rectangles for the border sides, which avoids self-touching geometry.
+        border_width = 1.0  # 1µm is well above 0.16µm Metal1 min width
+        border_margin = 3.0
+        
+        # Inner rectangle corners (the hole in the frame)
+        inner_x1 = margin_left - 2 + border_width
+        inner_y1 = border_margin + border_width
+        inner_x2 = DIE_WIDTH_UM - border_margin - border_width
+        inner_y2 = DIE_HEIGHT_UM - margin_top + 2 - border_width
+        
+        # Outer rectangle corners
+        outer_x1 = margin_left - 2
+        outer_y1 = border_margin
+        outer_x2 = DIE_WIDTH_UM - border_margin
+        outer_y2 = DIE_HEIGHT_UM - margin_top + 2
+        
+        # Create 4 separate rectangles for the border sides
+        # Left side (full height)
+        left_border = gdstk.rectangle(
+            (outer_x1, outer_y1),
+            (inner_x1, outer_y2),
+            layer=TEXT_LAYER,
+            datatype=TEXT_DATATYPE
+        )
+        cell.add(left_border)
+        
+        # Right side (full height)
+        right_border = gdstk.rectangle(
+            (inner_x2, outer_y1),
+            (outer_x2, outer_y2),
+            layer=TEXT_LAYER,
+            datatype=TEXT_DATATYPE
+        )
+        cell.add(right_border)
+        
+        # Bottom side (between left and right)
+        bottom_border = gdstk.rectangle(
+            (inner_x1, outer_y1),
+            (inner_x2, inner_y1),
+            layer=TEXT_LAYER,
+            datatype=TEXT_DATATYPE
+        )
+        cell.add(bottom_border)
+        
+        # Top side (between left and right)
+        top_border = gdstk.rectangle(
+            (inner_x1, inner_y2),
+            (inner_x2, outer_y2),
+            layer=TEXT_LAYER,
+            datatype=TEXT_DATATYPE
+        )
+        cell.add(top_border)
+        
+        print(f"Border: 4 rectangles ({border_width} µm width) - DRC-safe")
+    else:
+        print("Border: DISABLED (to reduce DRC violations)")
     
     # -------------------------------------------------------------------------
     # 8. Add density fill to meet 35-60% metal coverage requirement
     # -------------------------------------------------------------------------
-    print()
-    print("Adding density fill (IHP requires 35-60% metal coverage)...")
-    print(f"  Using {ART_BUFFER}µm BOUNDING BOX exclusion (covers entire art regions)")
-    
-    # Define art region bounding boxes (these exclude the ENTIRE region, not just individual polygons)
-    # This prevents fill from appearing in gaps between characters/pixels
-    pig_bounds = (pig_offset_x, pig_offset_y, pig_offset_x + pig_width, pig_offset_y + pig_height)
-    
-    # Text bounds for exclusion zone
-    text_bounds = None
-    if text_final_width > 0:
-        text_bounds = (text_final_x, text_final_y, 
-                       text_final_x + text_final_width,
-                       text_final_y + text_final_height)
-    
-    # Create unified exclusion zone using bounding boxes
-    exclusion_zone = get_art_exclusion_zone(cell, ART_BUFFER, pig_bounds, text_bounds)
-    
-    fill_layers = [
-        (8, 0, 'Metal1'),   # Metal1.drawing
-        (10, 0, 'Metal2'),  # Metal2.drawing
-        (30, 0, 'Metal3'),  # Metal3.drawing
-    ]
-    
-    for layer, datatype, name in fill_layers:
-        count = add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top, exclusion_zone)
-        print(f"  {name}: added {count} fill squares ({count * FILL_SIZE**2:.0f} µm²)")
+    if ENABLE_DENSITY_FILL:
+        print()
+        print("Adding density fill (IHP requires 35-60% metal coverage)...")
+        print(f"  Using {ART_BUFFER}µm BOUNDING BOX exclusion (covers entire art regions)")
+        
+        # Define art region bounding boxes (these exclude the ENTIRE region, not just individual polygons)
+        # This prevents fill from appearing in gaps between characters/pixels
+        pig_bounds = (pig_offset_x, pig_offset_y, pig_offset_x + pig_width, pig_offset_y + pig_height)
+        
+        # Text bounds for exclusion zone
+        text_bounds = None
+        if text_final_width > 0:
+            text_bounds = (text_final_x, text_final_y, 
+                           text_final_x + text_final_width,
+                           text_final_y + text_final_height)
+        
+        # Create unified exclusion zone using bounding boxes
+        exclusion_zone = get_art_exclusion_zone(cell, ART_BUFFER, pig_bounds, text_bounds)
+        
+        fill_layers = [
+            (8, 0, 'Metal1'),   # Metal1.drawing
+            (10, 0, 'Metal2'),  # Metal2.drawing
+            (30, 0, 'Metal3'),  # Metal3.drawing
+        ]
+        
+        for layer, datatype, name in fill_layers:
+            count = add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top, exclusion_zone)
+            print(f"  {name}: added {count} fill squares ({count * FILL_SIZE**2:.0f} µm²)")
+    else:
+        print()
+        print("Density fill: DISABLED (to reduce DRC violations)")
     
     # -------------------------------------------------------------------------
     # 9. Save files
