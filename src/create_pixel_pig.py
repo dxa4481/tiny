@@ -26,7 +26,9 @@ from create_silicon_art import (
     DIE_WIDTH_UM, DIE_HEIGHT_UM,
     PIN_WIDTH, PIN_HEIGHT, PIN_Y_CENTER,
     PIN_LAYER, PIN_DATATYPE,
+    PIN_DRAWING_LAYER, PIN_DRAWING_DATATYPE,  # Metal4.drawing to enclose pins
     POWER_PIN_LAYER, POWER_PIN_DATATYPE,
+    POWER_DRAWING_LAYER, POWER_DRAWING_DATATYPE,  # TopMetal1.drawing to enclose pins
     POWER_LABEL_LAYER, POWER_LABEL_DATATYPE,
     TEXT_LAYER, TEXT_DATATYPE,
     BOUND_LAYER, BOUND_DATATYPE,
@@ -432,9 +434,21 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     cell.add(boundary)
     
     # -------------------------------------------------------------------------
-    # 2. Add signal pins
+    # 2. Add signal pins (Metal4.pin + Metal4.drawing)
     # -------------------------------------------------------------------------
+    # DRC Rule Pin.f.M4 requires: Metal4 enclosure of Metal4:pin = 0.00
+    # This means every pin shape must be covered by a Metal4.drawing shape
     for pin_name, direction, x_pos in SIGNAL_PINS:
+        # Add Metal4.drawing shape (required by DRC to enclose pin)
+        drawing_rect = gdstk.rectangle(
+            (x_pos - PIN_WIDTH/2, PIN_Y_CENTER - PIN_HEIGHT/2),
+            (x_pos + PIN_WIDTH/2, PIN_Y_CENTER + PIN_HEIGHT/2),
+            layer=PIN_DRAWING_LAYER,
+            datatype=PIN_DRAWING_DATATYPE
+        )
+        cell.add(drawing_rect)
+        
+        # Add Metal4.pin shape
         pin_rect = gdstk.rectangle(
             (x_pos - PIN_WIDTH/2, PIN_Y_CENTER - PIN_HEIGHT/2),
             (x_pos + PIN_WIDTH/2, PIN_Y_CENTER + PIN_HEIGHT/2),
@@ -452,10 +466,22 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         cell.add(label)
     
     # -------------------------------------------------------------------------
-    # 3. Add power pins on TopMetal1 (may conflict with wrapper power grid)
+    # 3. Add power pins on TopMetal1 (TopMetal1.pin + TopMetal1.drawing)
     # -------------------------------------------------------------------------
+    # DRC Rule Pin.g requires: TopMetal1 enclosure of TopMetal1:pin = 0.00
+    # This means every pin shape must be covered by a TopMetal1.drawing shape
     if ENABLE_POWER_PINS:
         for pin_name, use_type, x_pos in POWER_PINS:
+            # Add TopMetal1.drawing shape (required by DRC to enclose pin)
+            drawing_rect = gdstk.rectangle(
+                (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
+                (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
+                layer=POWER_DRAWING_LAYER,
+                datatype=POWER_DRAWING_DATATYPE
+            )
+            cell.add(drawing_rect)
+            
+            # Add TopMetal1.pin shape
             power_rect = gdstk.rectangle(
                 (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
                 (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
