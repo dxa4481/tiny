@@ -40,8 +40,9 @@ jobs:
           ls -la gds_render.png
 
       - name: Build with Custom GDS
-        uses: TinyTapeout/tt-gds-action/custom_gds@tt10
+        uses: TinyTapeout/tt-gds-action/custom_gds@ttihp26a
         with:
+          pdk: ihp-sg13g2
           top_module: tt_um_silicon_art
           gds_path: gds/tt_um_silicon_art.gds
           lef_path: gds/tt_um_silicon_art.lef
@@ -55,4 +56,4 @@ jobs:
       id-token: write
     steps:
       - name: Deploy to GitHub Pages
-        uses: TinyTapeout/tt-gds-action/viewer@tt10
+        uses: TinyTapeout/tt-gds-action/viewer@ttihp26a

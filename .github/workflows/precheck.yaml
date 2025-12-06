@@ -39,6 +39,7 @@ jobs:
       - name: Build with Custom GDS
         uses: TinyTapeout/tt-gds-action/custom_gds@ttihp26a
         with:
+          pdk: ihp-sg13g2
           top_module: tt_um_silicon_art
           gds_path: gds/tt_um_silicon_art.gds
           lef_path: gds/tt_um_silicon_art.lef
