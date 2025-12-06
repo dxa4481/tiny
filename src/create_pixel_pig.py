@@ -119,8 +119,8 @@ ART_BUFFER = 0.5     # 0.5µm clearance around art (very tight)
 ENABLE_DENSITY_FILL = False  # Disable density fill to reduce DRC violations
 ENABLE_TEXT = False  # Disable text to reduce DRC violations  
 ENABLE_BORDER = False  # Disable border to reduce DRC violations
-ENABLE_PIG = False  # Disable pig art to test if DRC issues are from wrapper
-ENABLE_POWER_PINS = False  # Disable power pins - wrapper may provide them
+ENABLE_PIG = True  # Re-enable pig art - DRC violations not from art
+ENABLE_POWER_PINS = True  # Power pins REQUIRED by TinyTapeout pin check
 
 # =============================================================================
 # Pixel Font Definition (5x7 characters)
