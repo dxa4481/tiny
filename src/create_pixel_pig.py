@@ -128,7 +128,7 @@ ENABLE_TEXT = True  # Canary token text enabled
 ENABLE_BORDER = False  # Disable - border not needed
 ENABLE_PIG = True  # Pig art enabled - violations are not from the pig
 ENABLE_POWER_PINS = True  # Power pins REQUIRED by TinyTapeout pin check
-ENABLE_OUTPUT_GROUND = True  # Connect output pins to ground (VGND)
+ENABLE_OUTPUT_GROUND = False  # DISABLED - causes LVS mismatch (extra metal not in netlist)
 ENABLE_VIA_TO_TOPMETAL = True  # Add via stack with correct sizes (Via4=0.19µm, TopVia1=0.42µm)
 
 # Ground bus parameters - connects output pins to VGND
@@ -1176,20 +1176,27 @@ def main():
         print("  🐷 Pixel Pig (bottom) - on Metal.drawing layers")
         print("  📝 Canary Token (top) - pixel font on Metal1.drawing")
         print("  🔲 Border frame (4 rectangles) - on Metal1.drawing")
-        print("  ⚡ Ground bus connecting 24 output pins to VGND")
+        if ENABLE_OUTPUT_GROUND:
+            print("  ⚡ Ground bus connecting 24 output pins to VGND")
+        else:
+            print("  ⚡ Output ground bus DISABLED (LVS compatibility)")
         print()
         print("Layer usage:")
         print("  🔵 Metal1.drawing (8/0)  = text + pig body + border + fill")
         print("  🟢 Metal2.drawing (10/0) = pig details + eyes + fill")
         print("  🔴 Metal3.drawing (30/0) = pig snout + key + fill")
-        print("  🟣 Metal4.drawing (50/0) = signal pins + ground bus")
-        print("  🟡 TopMetal1.drawing (126/0) = power pins + ground")
-        print("  🔗 Via4 (66/0) + Metal5 (67/0) + TopVia1 (125/0) = via stack to TopMetal1")
+        print("  🟣 Metal4.drawing (50/0) = signal pins")
+        print("  🟡 TopMetal1.drawing (126/0) = power pins")
+        if ENABLE_OUTPUT_GROUND:
+            print("  🔗 Via4 (66/0) + Metal5 (67/0) + TopVia1 (125/0) = via stack to TopMetal1")
         print()
-        print("Output pin grounding:")
-        print("  ✅ 24 output pins connected to Metal4 ground bus")
-        print("  ✅ Ground bus connected to VGND via Metal4→Via4→Metal5→TopVia1→TopMetal1")
-        print("  ✅ 19 input pins left floating (as required)")
+        if ENABLE_OUTPUT_GROUND:
+            print("Output pin grounding:")
+            print("  ✅ 24 output pins connected to Metal4 ground bus")
+            print("  ✅ Ground bus connected to VGND via Metal4→Via4→Metal5→TopVia1→TopMetal1")
+            print("  ✅ 19 input pins left floating (as required)")
+        else:
+            print("Output pins: NOT connected to ground (LVS-safe design)")
         print()
         print("DRC fixes applied:")
         print("  ✅ Text uses pixel font (simple rectangles, not gdstk.text)")
