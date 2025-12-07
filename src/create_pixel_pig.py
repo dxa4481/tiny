@@ -130,7 +130,7 @@ ENABLE_OUTPUT_GROUND = True  # Connect output pins to ground (VGND)
 GROUND_BUS_Y = 150.0      # Y position of horizontal Metal4 bus (below pins at 154.48)
 GROUND_BUS_WIDTH = 1.0    # Width of Metal4 ground bus (above 0.20µm min)
 GROUND_TRACE_WIDTH = 0.5  # Width of vertical traces from pins to bus
-VIA_SIZE = 1.0            # TopVia1 size (must meet minimum enclosure rules)
+VIA_SIZE = 0.5            # TopVia1 size - IHP typical minimum ~0.42µm, using 0.5µm
 
 # =============================================================================
 # Pixel Font Definition (5x7 characters)
@@ -537,8 +537,17 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             leftmost_output_x = output_pins_sorted[0][2]
             rightmost_output_x = output_pins_sorted[-1][2]
             
-            # Extend bus from near VGND (left) to past the rightmost output pin
-            bus_x_start = vgnd_x + POWER_PIN_WIDTH/2 + 1.0  # 1µm clearance from VGND
+            # VGND pin boundaries
+            vgnd_left = vgnd_x - POWER_PIN_WIDTH/2
+            vgnd_right = vgnd_x + POWER_PIN_WIDTH/2
+            
+            # Place via within VGND's X footprint to connect directly
+            # Via must be inside VGND bounds with proper enclosure
+            via_x = vgnd_x  # Center of VGND
+            via_y = GROUND_BUS_Y
+            
+            # Metal4 ground bus extends from via location to past rightmost output
+            bus_x_start = via_x - VIA_SIZE/2 - 0.3  # Start with via enclosure
             bus_x_end = rightmost_output_x + PIN_WIDTH/2 + 0.5
             
             # Metal4 horizontal ground bus
@@ -564,11 +573,8 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 cell.add(trace)
             print(f"  Added {len(output_pins_sorted)} vertical traces to ground bus")
             
-            # TopVia1 to connect Metal4 ground bus to TopMetal1
-            # Place via near the left end of the ground bus, close to VGND
-            via_x = bus_x_start + 1.0  # Slightly inset from bus start
-            via_y = GROUND_BUS_Y
-            
+            # TopVia1 to connect Metal4 ground bus to TopMetal1/VGND
+            # Place via at center of VGND X position, at ground bus Y
             via_rect = gdstk.rectangle(
                 (via_x - VIA_SIZE/2, via_y - VIA_SIZE/2),
                 (via_x + VIA_SIZE/2, via_y + VIA_SIZE/2),
@@ -578,16 +584,30 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             cell.add(via_rect)
             print(f"  TopVia1 at ({via_x:.1f}, {via_y:.1f})")
             
-            # TopMetal1 connection from via to VGND
-            # Draw a rectangle that covers the via and extends to connect with VGND
+            # Metal4 via pad - ensure proper enclosure of via on all sides
+            # Via enclosure requirement is typically 0.05-0.1µm, use 0.3µm for margin
+            VIA_ENCLOSURE = 0.3
+            m4_via_pad = gdstk.rectangle(
+                (via_x - VIA_SIZE/2 - VIA_ENCLOSURE, via_y - VIA_SIZE/2 - VIA_ENCLOSURE),
+                (via_x + VIA_SIZE/2 + VIA_ENCLOSURE, via_y + VIA_SIZE/2 + VIA_ENCLOSURE),
+                layer=PIN_DRAWING_LAYER,  # Metal4.drawing
+                datatype=PIN_DRAWING_DATATYPE
+            )
+            cell.add(m4_via_pad)
+            print(f"  Metal4 via pad with {VIA_ENCLOSURE}µm enclosure")
+            
+            # TopMetal1 connection: extend VGND upward to cover the via
+            # VGND power pin ends at POWER_PIN_Y_END (149.98), via is at y=150
+            # We need TopMetal1 to bridge the gap and cover the via with enclosure
+            # Stay within VGND X bounds to avoid shorting to VPWR
             topmetal_rect = gdstk.rectangle(
-                (vgnd_x - POWER_PIN_WIDTH/2, via_y - VIA_SIZE/2 - 0.5),
-                (via_x + VIA_SIZE/2 + 0.5, via_y + VIA_SIZE/2 + 0.5),
+                (vgnd_left, POWER_PIN_Y_END - 1.0),  # Start below VGND top
+                (vgnd_right, via_y + VIA_SIZE/2 + 0.3),  # Extend to cover via with enclosure
                 layer=POWER_DRAWING_LAYER,  # TopMetal1.drawing
                 datatype=POWER_DRAWING_DATATYPE
             )
             cell.add(topmetal_rect)
-            print(f"  TopMetal1 connection from VGND to via")
+            print(f"  TopMetal1 extension: x={vgnd_left:.1f} to {vgnd_right:.1f}")
             print(f"  Ground connection complete!")
     else:
         print("Output ground bus: DISABLED")
