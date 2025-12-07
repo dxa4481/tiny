@@ -118,9 +118,9 @@ FILL_SIZE = 4.5      # 4.5µm x 4.5µm fill squares
 FILL_SPACING = 0.25  # 0.25µm gap (just above 0.21µm min)
 FILL_PITCH = FILL_SIZE + FILL_SPACING  # 4.75µm pitch
 ART_BUFFER = 0.5     # 0.5µm clearance around art (very tight)
-ENABLE_DENSITY_FILL = False  # Disable density fill to reduce DRC violations
-ENABLE_TEXT = False  # Disable text to reduce DRC violations  
-ENABLE_BORDER = False  # Disable border to reduce DRC violations
+ENABLE_DENSITY_FILL = False  # Disable - density fill not needed for art
+ENABLE_TEXT = True  # Canary token text enabled
+ENABLE_BORDER = False  # Disable - border not needed
 ENABLE_PIG = True  # Pig art enabled - violations are not from the pig
 ENABLE_POWER_PINS = True  # Power pins REQUIRED by TinyTapeout pin check
 
