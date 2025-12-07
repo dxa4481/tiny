@@ -127,7 +127,7 @@ ENABLE_POWER_PINS = True  # Power pins REQUIRED by TinyTapeout pin check
 ENABLE_OUTPUT_GROUND = True  # Connect output pins to ground (VGND)
 
 # Ground bus parameters - connects output pins to VGND
-GROUND_BUS_Y = 150.0      # Y position of horizontal Metal4 bus (below pins at 154.48)
+GROUND_BUS_Y = 148.0      # Y position of horizontal Metal4 bus (within VGND Y range, below pins at 154.48)
 GROUND_BUS_WIDTH = 1.0    # Width of Metal4 ground bus (above 0.20µm min)
 GROUND_TRACE_WIDTH = 0.5  # Width of vertical traces from pins to bus
 VIA_SIZE = 0.5            # TopVia1 size - IHP typical minimum ~0.42µm, using 0.5µm
@@ -596,18 +596,23 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             cell.add(m4_via_pad)
             print(f"  Metal4 via pad with {VIA_ENCLOSURE}µm enclosure")
             
-            # TopMetal1 connection: extend VGND upward to cover the via
-            # VGND power pin ends at POWER_PIN_Y_END (149.98), via is at y=150
-            # We need TopMetal1 to bridge the gap and cover the via with enclosure
-            # Stay within VGND X bounds to avoid shorting to VPWR
+            # TopMetal1 connection: The via is now within VGND's Y range (5.0 to 149.98)
+            # so the existing VGND TopMetal1.drawing shape should already cover it.
+            # We add a small extension around the via to ensure proper enclosure.
+            # Stay within VGND X and Y bounds to avoid issues.
+            via_enclosure_tm1 = 0.3
+            tm1_y_start = max(POWER_PIN_Y_START, via_y - VIA_SIZE/2 - via_enclosure_tm1)
+            tm1_y_end = min(POWER_PIN_Y_END, via_y + VIA_SIZE/2 + via_enclosure_tm1)
+            
+            # Only add extension if needed (via might already be covered by VGND)
             topmetal_rect = gdstk.rectangle(
-                (vgnd_left, POWER_PIN_Y_END - 1.0),  # Start below VGND top
-                (vgnd_right, via_y + VIA_SIZE/2 + 0.3),  # Extend to cover via with enclosure
+                (vgnd_left, tm1_y_start),
+                (vgnd_right, tm1_y_end),
                 layer=POWER_DRAWING_LAYER,  # TopMetal1.drawing
                 datatype=POWER_DRAWING_DATATYPE
             )
             cell.add(topmetal_rect)
-            print(f"  TopMetal1 extension: x={vgnd_left:.1f} to {vgnd_right:.1f}")
+            print(f"  TopMetal1 via enclosure: y={tm1_y_start:.1f} to {tm1_y_end:.1f}")
             print(f"  Ground connection complete!")
     else:
         print("Output ground bus: DISABLED")
