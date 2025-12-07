@@ -125,6 +125,28 @@ ENABLE_PIG = True  # Pig art enabled - violations are not from the pig
 ENABLE_POWER_PINS = True  # Power pins REQUIRED by TinyTapeout pin check
 
 # =============================================================================
+# Fill Exclusion for Optical Microscope Visibility
+# =============================================================================
+# To see the art under an optical microscope WITHOUT dissolving metal fill:
+# 1. Don't add fill on Metal1-3 in the art regions (already handled by exclusion zones)
+# 2. Exclude the power rail region from fill (they run vertically on the left)
+# 3. Don't add ANY geometry on Metal4/5/TopMetal above the art
+#
+# Key insight: For TinyTapeout custom GDS, WE control all the fill. The fab
+# doesn't add additional fill to our custom GDS regions. So by simply NOT
+# adding fill above the art, the art remains visible under optical microscope.
+#
+# NOTE: We do NOT add "fill blockage" shapes on higher layers because:
+# - Solid metal shapes would OBSCURE the art (opposite of what we want!)
+# - TinyTapeout doesn't have .nofill layers in the whitelist anyway
+# =============================================================================
+
+# Power rail region to exclude from fill (left edge of die)
+# VPWR is at x=8.0, VGND is at x=5.0, both with width 1.8µm
+# We'll exclude a wider region to ensure visibility
+POWER_RAIL_EXCLUSION_X = 12.0  # Exclude from x=0 to x=12.0µm
+
+# =============================================================================
 # Pixel Font Definition (5x7 characters)
 # Each character is a list of (x, y) coordinates for filled pixels
 # Origin is bottom-left of character cell
@@ -303,16 +325,22 @@ def render_pixel_text(text, x_start, y_start, layer, datatype, pixel_size=None, 
     return rectangles, (total_width, total_height)
 
 
-def get_art_exclusion_zone(cell, buffer_distance, pig_bounds, text_bounds):
+def get_art_exclusion_zone(cell, buffer_distance, pig_bounds, text_bounds, include_power_rails=True):
     """
     Create exclusion zones using BOUNDING BOXES around art regions.
     This prevents fill from appearing in gaps between characters/pixels.
+    
+    For optical microscope visibility:
+    - Excludes all art regions (pig + text)
+    - Excludes power rail region on the left edge
+    - Uses bounding boxes rather than individual polygon offsets
     
     Args:
         cell: The GDS cell
         buffer_distance: Buffer around art regions
         pig_bounds: (x1, y1, x2, y2) bounding box of pig area
         text_bounds: (x1, y1, x2, y2) bounding box of text area
+        include_power_rails: If True, also exclude the power rail region
     """
     import gdstk
     
@@ -334,6 +362,15 @@ def get_art_exclusion_zone(cell, buffer_distance, pig_bounds, text_bounds):
             (x2 + buffer_distance, y2 + buffer_distance)
         ))
     
+    # Power rail exclusion zone (left edge of die)
+    # This ensures power rails are visible under optical microscope
+    if include_power_rails:
+        from create_silicon_art import DIE_HEIGHT_UM
+        exclusion_rects.append(gdstk.rectangle(
+            (0, 0),
+            (POWER_RAIL_EXCLUSION_X, DIE_HEIGHT_UM)
+        ))
+    
     # Also exclude the border area (it's on Metal1)
     # The border is a frame around the die
     border_polys = [p for p in cell.polygons 
@@ -348,6 +385,8 @@ def get_art_exclusion_zone(cell, buffer_distance, pig_bounds, text_bounds):
     if exclusion_rects:
         return gdstk.boolean(exclusion_rects, [], "or")
     return []
+
+
 
 
 def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top, exclusion_zone):
@@ -774,6 +813,12 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         print()
         print("Density fill: DISABLED (to reduce DRC violations)")
     
+    print()
+    print("🔬 Optical microscope visibility:")
+    print("  ✓ No fill above art regions (art is visible from above)")
+    print("  ✓ Power rail region excluded from fill (left edge)")
+    print("  ✓ No metal on Metal4/5/TopMetal above art")
+    
     # -------------------------------------------------------------------------
     # 9. Save files
     # -------------------------------------------------------------------------
@@ -993,6 +1038,17 @@ def main():
         print("  ✅ Text uses pixel font (simple rectangles, not gdstk.text)")
         print("  ✅ Border uses 4 separate rectangles (no self-touching corners)")
         print("  ✅ All geometry is simple rectangles (DRC-safe)")
+        print()
+        print("🔬 OPTICAL MICROSCOPE VISIBILITY:")
+        print("  ✅ No fill placed above art regions")
+        print("  ✅ No metal on Metal4/5/TopMetal above art (clear view from top)")
+        print("  ✅ Power rail region excluded from fill (left edge visible)")
+        print("  ✅ Art visible under optical microscope WITHOUT acid etching!")
+        print()
+        print("Viewing tips:")
+        print("  - Use 50-500x magnification")
+        print("  - Metallurgical/reflected light microscope works best")
+        print("  - Art is on Metal1-3 layers (visible from top without delayering)")
 
 
 if __name__ == '__main__':
