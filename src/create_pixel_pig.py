@@ -6,7 +6,7 @@ Creates a combined design with:
 - Canary token text (AWS credentials)
 - Pixel pig artwork
 
-Uses IHP-SG13G2 PDK layer specifications from create_silicon_art.py
+Uses IHP-SG13G2 PDK layer specifications from create_silicon_art.py.
 
 Usage:
     python create_pixel_pig.py
