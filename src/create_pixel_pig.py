@@ -128,7 +128,7 @@ ENABLE_TEXT = True  # Canary token text enabled
 ENABLE_BORDER = False  # Disable - border not needed
 ENABLE_PIG = True  # Pig art enabled - violations are not from the pig
 ENABLE_POWER_PINS = True  # Power pins REQUIRED by TinyTapeout pin check
-ENABLE_OUTPUT_GROUND = False  # DISABLED - causes LVS mismatch (extra metal not in netlist)
+ENABLE_OUTPUT_GROUND = True  # Connect output pins to ground (all metal declared in LEF for LVS)
 ENABLE_VIA_TO_TOPMETAL = True  # Add via stack with correct sizes (Via4=0.19µm, TopVia1=0.42µm)
 
 # Ground bus parameters - connects output pins to VGND
@@ -138,6 +138,12 @@ GROUND_TRACE_WIDTH = 0.5  # Width of vertical traces from pins to bus
 # Via sizes from IHP DRC rules - MUST be exact sizes!
 VIA4_SIZE = 0.19          # Via4 size - IHP DRC V4.a requires exactly 0.19µm
 TOPVIA1_SIZE = 0.42       # TopVia1 size - IHP DRC TV1.a requires exactly 0.42µm
+VIA_ENCLOSURE = 0.5       # Metal enclosure around vias
+
+# Ground bus metal bounds - populated during GDS generation, used for LEF
+# These store the bounding boxes of all metal that's part of the VGND ground routing
+# Format: list of (layer_name, llx, lly, urx, ury) tuples
+GROUND_BUS_METAL_BOUNDS = []
 
 # =============================================================================
 # Pixel Font Definition (5x7 characters)
@@ -535,6 +541,12 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     # We create a Metal4 ground bus below the pins, connect each output pin
     # to the bus with vertical traces, then use TopVia1 to connect to TopMetal1
     # which connects to the VGND power pin.
+    #
+    # IMPORTANT FOR LVS: All ground routing metal must be declared in the LEF
+    # as part of the VGND pin. We track metal bounds in GROUND_BUS_METAL_BOUNDS.
+    global GROUND_BUS_METAL_BOUNDS
+    GROUND_BUS_METAL_BOUNDS = []  # Reset for this run
+    
     if ENABLE_OUTPUT_GROUND:
         # Get output pins sorted by X position
         output_pins = [(name, direction, x) for name, direction, x in SIGNAL_PINS 
@@ -577,33 +589,42 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             # Metal4 ground bus extends from leftmost output to VGND via location
             # The bus needs to span from the leftmost output pin to the VGND connection point
             bus_x_left = leftmost_output_x - PIN_WIDTH/2 - 0.5  # Past leftmost output
-            bus_x_right = via_x + TOPVIA1_SIZE/2 + 0.3  # Past via with enclosure
+            bus_x_right = via_x + TOPVIA1_SIZE/2 + VIA_ENCLOSURE  # Past via with enclosure
             
             # Ensure proper ordering (handle case where VGND is to left or right of outputs)
             bus_x_start = min(bus_x_left, bus_x_right)
             bus_x_end = max(bus_x_left, bus_x_right)
             
             # Metal4 horizontal ground bus
+            m4_bus_lly = GROUND_BUS_Y - GROUND_BUS_WIDTH/2
+            m4_bus_ury = GROUND_BUS_Y + GROUND_BUS_WIDTH/2
             ground_bus = gdstk.rectangle(
-                (bus_x_start, GROUND_BUS_Y - GROUND_BUS_WIDTH/2),
-                (bus_x_end, GROUND_BUS_Y + GROUND_BUS_WIDTH/2),
+                (bus_x_start, m4_bus_lly),
+                (bus_x_end, m4_bus_ury),
                 layer=PIN_DRAWING_LAYER,  # Metal4.drawing
                 datatype=PIN_DRAWING_DATATYPE
             )
             cell.add(ground_bus)
+            GROUND_BUS_METAL_BOUNDS.append(('Metal4', bus_x_start, m4_bus_lly, bus_x_end, m4_bus_ury))
             print(f"  Metal4 ground bus: x={bus_x_start:.1f} to {bus_x_end:.1f}, y={GROUND_BUS_Y:.1f}")
             
             # Connect each output pin to the ground bus with vertical Metal4 traces
+            pin_bottom_y = PIN_Y_CENTER - PIN_HEIGHT/2
             for pin_name, direction, x_pos in output_pins_sorted:
                 # Vertical trace from pin bottom to ground bus top
-                pin_bottom_y = PIN_Y_CENTER - PIN_HEIGHT/2
+                trace_llx = x_pos - GROUND_TRACE_WIDTH/2
+                trace_urx = x_pos + GROUND_TRACE_WIDTH/2
+                trace_lly = m4_bus_ury  # Start at top of bus
+                trace_ury = pin_bottom_y  # End at bottom of pin
                 trace = gdstk.rectangle(
-                    (x_pos - GROUND_TRACE_WIDTH/2, GROUND_BUS_Y + GROUND_BUS_WIDTH/2),
-                    (x_pos + GROUND_TRACE_WIDTH/2, pin_bottom_y),
+                    (trace_llx, trace_lly),
+                    (trace_urx, trace_ury),
                     layer=PIN_DRAWING_LAYER,  # Metal4.drawing
                     datatype=PIN_DRAWING_DATATYPE
                 )
                 cell.add(trace)
+                # Track each vertical trace as part of VGND
+                GROUND_BUS_METAL_BOUNDS.append(('Metal4', trace_llx, trace_lly, trace_urx, trace_ury))
             print(f"  Added {len(output_pins_sorted)} vertical traces to ground bus")
             
             # Via stack to connect Metal4 ground bus to TopMetal1/VGND
@@ -612,8 +633,6 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             #   - Via4: 0.19µm × 0.19µm (V4.a)
             #   - TopVia1: 0.42µm × 0.42µm (TV1.a)
             if ENABLE_VIA_TO_TOPMETAL:
-                VIA_ENCLOSURE = 0.5  # Enclosure for all metals around vias
-                
                 # 1. Via4 (Metal4 to Metal5) - must be exactly 0.19µm
                 via4_rect = gdstk.rectangle(
                     (via_x - VIA4_SIZE/2, via_y - VIA4_SIZE/2),
@@ -625,24 +644,34 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 print(f"  Via4 ({VIA4_SIZE}µm) at ({via_x:.1f}, {via_y:.1f})")
                 
                 # 2. Metal4 via pad - ensure proper enclosure of Via4
+                m4_pad_llx = via_x - VIA4_SIZE/2 - VIA_ENCLOSURE
+                m4_pad_lly = via_y - VIA4_SIZE/2 - VIA_ENCLOSURE
+                m4_pad_urx = via_x + VIA4_SIZE/2 + VIA_ENCLOSURE
+                m4_pad_ury = via_y + VIA4_SIZE/2 + VIA_ENCLOSURE
                 m4_via_pad = gdstk.rectangle(
-                    (via_x - VIA4_SIZE/2 - VIA_ENCLOSURE, via_y - VIA4_SIZE/2 - VIA_ENCLOSURE),
-                    (via_x + VIA4_SIZE/2 + VIA_ENCLOSURE, via_y + VIA4_SIZE/2 + VIA_ENCLOSURE),
+                    (m4_pad_llx, m4_pad_lly),
+                    (m4_pad_urx, m4_pad_ury),
                     layer=PIN_DRAWING_LAYER,  # Metal4.drawing
                     datatype=PIN_DRAWING_DATATYPE
                 )
                 cell.add(m4_via_pad)
+                GROUND_BUS_METAL_BOUNDS.append(('Metal4', m4_pad_llx, m4_pad_lly, m4_pad_urx, m4_pad_ury))
                 
                 # 3. Metal5 pad - must be large enough to enclose both Via4 and TopVia1
                 # TopVia1 is larger (0.42µm) so use that as the reference
                 m5_pad_half = max(VIA4_SIZE/2, TOPVIA1_SIZE/2) + VIA_ENCLOSURE
+                m5_pad_llx = via_x - m5_pad_half
+                m5_pad_lly = via_y - m5_pad_half
+                m5_pad_urx = via_x + m5_pad_half
+                m5_pad_ury = via_y + m5_pad_half
                 m5_pad = gdstk.rectangle(
-                    (via_x - m5_pad_half, via_y - m5_pad_half),
-                    (via_x + m5_pad_half, via_y + m5_pad_half),
+                    (m5_pad_llx, m5_pad_lly),
+                    (m5_pad_urx, m5_pad_ury),
                     layer=METAL5_LAYER,
                     datatype=METAL5_DATATYPE
                 )
                 cell.add(m5_pad)
+                GROUND_BUS_METAL_BOUNDS.append(('Metal5', m5_pad_llx, m5_pad_lly, m5_pad_urx, m5_pad_ury))
                 print(f"  Metal5 pad with {VIA_ENCLOSURE}µm enclosure")
                 
                 # 4. TopVia1 (Metal5 to TopMetal1) - must be exactly 0.42µm
@@ -656,6 +685,7 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 print(f"  TopVia1 ({TOPVIA1_SIZE}µm) at ({via_x:.1f}, {via_y:.1f})")
                 
                 # 5. TopMetal1 connection - extends from VGND to cover TopVia1
+                # This should be within the main VGND stripe bounds, so no need to track separately
                 via_enclosure_tm1 = 0.5
                 tm1_y_start = max(vgnd_y_start, via_y - TOPVIA1_SIZE/2 - via_enclosure_tm1)
                 tm1_y_end = min(vgnd_y_end, via_y + TOPVIA1_SIZE/2 + via_enclosure_tm1)
@@ -671,6 +701,8 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 print(f"  Via stack complete: Metal4→Via4→Metal5→TopVia1→TopMetal1")
             else:
                 print(f"  Via to TopMetal1: DISABLED (Metal4 bus only)")
+            
+            print(f"  Ground routing metal tracked: {len(GROUND_BUS_METAL_BOUNDS)} shapes for LEF")
             print(f"  Ground connection complete!")
     else:
         print("Output ground bus: DISABLED")
@@ -985,6 +1017,9 @@ def generate_lef():
     
     IMPORTANT: Power pins must have MULTIPLE PORT entries distributed across 
     the macro to match TinyTapeout top-level power grid integration requirements.
+    
+    FOR LVS: The VGND pin must include all ground routing metal (Metal4 bus,
+    Metal5 pads) so LVS recognizes them as part of the VGND network.
     """
     lef = f"""VERSION 5.8 ;
 BUSBITCHARS "[]" ;
@@ -1015,6 +1050,35 @@ MACRO {TOP_MODULE}
     PORT
       LAYER TopMetal1 ;
         RECT {llx:.3f} {y_start:.3f} {urx:.3f} {y_end:.3f} ;
+    END"""
+            
+            # For VGND: Add ground bus metal bounds as additional PORT entries
+            # This ensures LVS recognizes the ground routing as part of VGND
+            if pin_name == "VGND" and ENABLE_OUTPUT_GROUND and GROUND_BUS_METAL_BOUNDS:
+                # Group bounds by layer
+                metal4_bounds = [b for b in GROUND_BUS_METAL_BOUNDS if b[0] == 'Metal4']
+                metal5_bounds = [b for b in GROUND_BUS_METAL_BOUNDS if b[0] == 'Metal5']
+                
+                # Add Metal4 ground routing as VGND
+                if metal4_bounds:
+                    lef += f"""
+    PORT
+      LAYER Metal4 ;"""
+                    for layer_name, llx, lly, urx, ury in metal4_bounds:
+                        lef += f"""
+        RECT {llx:.3f} {lly:.3f} {urx:.3f} {ury:.3f} ;"""
+                    lef += """
+    END"""
+                
+                # Add Metal5 pads as VGND
+                if metal5_bounds:
+                    lef += f"""
+    PORT
+      LAYER Metal5 ;"""
+                    for layer_name, llx, lly, urx, ury in metal5_bounds:
+                        lef += f"""
+        RECT {llx:.3f} {lly:.3f} {urx:.3f} {ury:.3f} ;"""
+                    lef += """
     END"""
             
             lef += f"""
