@@ -597,9 +597,11 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             bus_x_end = max(bus_x_left, bus_x_right)
             
             # Metal4 horizontal ground bus
+            # NOTE: Only add .drawing shape - NOT .pin shape because:
+            # 1. Power pins must be TopMetal1 only (precheck requirement)
+            # 2. This is internal routing that connects to VGND via the via stack
             m4_bus_lly = GROUND_BUS_Y - GROUND_BUS_WIDTH/2
             m4_bus_ury = GROUND_BUS_Y + GROUND_BUS_WIDTH/2
-            # Add .drawing shape
             ground_bus = gdstk.rectangle(
                 (bus_x_start, m4_bus_lly),
                 (bus_x_end, m4_bus_ury),
@@ -607,18 +609,11 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 datatype=PIN_DRAWING_DATATYPE
             )
             cell.add(ground_bus)
-            # Add .pin shape (required by precheck when declared in LEF)
-            ground_bus_pin = gdstk.rectangle(
-                (bus_x_start, m4_bus_lly),
-                (bus_x_end, m4_bus_ury),
-                layer=PIN_LAYER,  # Metal4.pin
-                datatype=PIN_DATATYPE
-            )
-            cell.add(ground_bus_pin)
-            GROUND_BUS_METAL_BOUNDS.append(('Metal4', bus_x_start, m4_bus_lly, bus_x_end, m4_bus_ury))
+            # Track bounds but don't add to LEF (internal routing only)
             print(f"  Metal4 ground bus: x={bus_x_start:.1f} to {bus_x_end:.1f}, y={GROUND_BUS_Y:.1f}")
             
             # Connect each output pin to the ground bus with vertical Metal4 traces
+            # NOTE: Only add .drawing shape - this is internal routing, not a pin
             pin_bottom_y = PIN_Y_CENTER - PIN_HEIGHT/2
             for pin_name, direction, x_pos in output_pins_sorted:
                 # Vertical trace from pin bottom to ground bus top
@@ -626,7 +621,6 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 trace_urx = x_pos + GROUND_TRACE_WIDTH/2
                 trace_lly = m4_bus_ury  # Start at top of bus
                 trace_ury = pin_bottom_y  # End at bottom of pin
-                # Add .drawing shape
                 trace = gdstk.rectangle(
                     (trace_llx, trace_lly),
                     (trace_urx, trace_ury),
@@ -634,16 +628,6 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                     datatype=PIN_DRAWING_DATATYPE
                 )
                 cell.add(trace)
-                # Add .pin shape (required by precheck when declared in LEF)
-                trace_pin = gdstk.rectangle(
-                    (trace_llx, trace_lly),
-                    (trace_urx, trace_ury),
-                    layer=PIN_LAYER,  # Metal4.pin
-                    datatype=PIN_DATATYPE
-                )
-                cell.add(trace_pin)
-                # Track each vertical trace as part of VGND
-                GROUND_BUS_METAL_BOUNDS.append(('Metal4', trace_llx, trace_lly, trace_urx, trace_ury))
             print(f"  Added {len(output_pins_sorted)} vertical traces to ground bus")
             
             # Via stack to connect Metal4 ground bus to TopMetal1/VGND
@@ -663,11 +647,11 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 print(f"  Via4 ({VIA4_SIZE}µm) at ({via_x:.1f}, {via_y:.1f})")
                 
                 # 2. Metal4 via pad - ensure proper enclosure of Via4
+                # NOTE: Only add .drawing shape - this is internal routing
                 m4_pad_llx = via_x - VIA4_SIZE/2 - VIA_ENCLOSURE
                 m4_pad_lly = via_y - VIA4_SIZE/2 - VIA_ENCLOSURE
                 m4_pad_urx = via_x + VIA4_SIZE/2 + VIA_ENCLOSURE
                 m4_pad_ury = via_y + VIA4_SIZE/2 + VIA_ENCLOSURE
-                # Add .drawing shape
                 m4_via_pad = gdstk.rectangle(
                     (m4_pad_llx, m4_pad_lly),
                     (m4_pad_urx, m4_pad_ury),
@@ -675,24 +659,15 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                     datatype=PIN_DRAWING_DATATYPE
                 )
                 cell.add(m4_via_pad)
-                # Add .pin shape (required by precheck when declared in LEF)
-                m4_via_pad_pin = gdstk.rectangle(
-                    (m4_pad_llx, m4_pad_lly),
-                    (m4_pad_urx, m4_pad_ury),
-                    layer=PIN_LAYER,  # Metal4.pin
-                    datatype=PIN_DATATYPE
-                )
-                cell.add(m4_via_pad_pin)
-                GROUND_BUS_METAL_BOUNDS.append(('Metal4', m4_pad_llx, m4_pad_lly, m4_pad_urx, m4_pad_ury))
                 
                 # 3. Metal5 pad - must be large enough to enclose both Via4 and TopVia1
                 # TopVia1 is larger (0.42µm) so use that as the reference
+                # NOTE: Only add .drawing shape - this is internal routing
                 m5_pad_half = max(VIA4_SIZE/2, TOPVIA1_SIZE/2) + VIA_ENCLOSURE
                 m5_pad_llx = via_x - m5_pad_half
                 m5_pad_lly = via_y - m5_pad_half
                 m5_pad_urx = via_x + m5_pad_half
                 m5_pad_ury = via_y + m5_pad_half
-                # Add .drawing shape
                 m5_pad = gdstk.rectangle(
                     (m5_pad_llx, m5_pad_lly),
                     (m5_pad_urx, m5_pad_ury),
@@ -700,15 +675,6 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                     datatype=METAL5_DATATYPE
                 )
                 cell.add(m5_pad)
-                # Add .pin shape (required by precheck when declared in LEF)
-                m5_pad_pin = gdstk.rectangle(
-                    (m5_pad_llx, m5_pad_lly),
-                    (m5_pad_urx, m5_pad_ury),
-                    layer=METAL5_LAYER,
-                    datatype=METAL5_PIN_DATATYPE
-                )
-                cell.add(m5_pad_pin)
-                GROUND_BUS_METAL_BOUNDS.append(('Metal5', m5_pad_llx, m5_pad_lly, m5_pad_urx, m5_pad_ury))
                 print(f"  Metal5 pad with {VIA_ENCLOSURE}µm enclosure")
                 
                 # 4. TopVia1 (Metal5 to TopMetal1) - must be exactly 0.42µm
@@ -1089,34 +1055,12 @@ MACRO {TOP_MODULE}
         RECT {llx:.3f} {y_start:.3f} {urx:.3f} {y_end:.3f} ;
     END"""
             
-            # For VGND: Add ground bus metal bounds as additional PORT entries
-            # This ensures LVS recognizes the ground routing as part of VGND
-            if pin_name == "VGND" and ENABLE_OUTPUT_GROUND and GROUND_BUS_METAL_BOUNDS:
-                # Group bounds by layer
-                metal4_bounds = [b for b in GROUND_BUS_METAL_BOUNDS if b[0] == 'Metal4']
-                metal5_bounds = [b for b in GROUND_BUS_METAL_BOUNDS if b[0] == 'Metal5']
-                
-                # Add Metal4 ground routing as VGND
-                if metal4_bounds:
-                    lef += f"""
-    PORT
-      LAYER Metal4 ;"""
-                    for layer_name, llx, lly, urx, ury in metal4_bounds:
-                        lef += f"""
-        RECT {llx:.3f} {lly:.3f} {urx:.3f} {ury:.3f} ;"""
-                    lef += """
-    END"""
-                
-                # Add Metal5 pads as VGND
-                if metal5_bounds:
-                    lef += f"""
-    PORT
-      LAYER Metal5 ;"""
-                    for layer_name, llx, lly, urx, ury in metal5_bounds:
-                        lef += f"""
-        RECT {llx:.3f} {lly:.3f} {urx:.3f} {ury:.3f} ;"""
-                    lef += """
-    END"""
+            # NOTE: We do NOT declare the Metal4/Metal5 ground routing in LEF because:
+            # 1. Precheck requires power pins to be TopMetal1 only
+            # 2. Power pins must be within 10µm of top/bottom edges
+            # 3. Power pins cannot overlap with signal pins
+            # The ground routing is internal wiring that connects to VGND via the via stack.
+            # LVS should recognize this connection through the via stack to TopMetal1.
             
             lef += f"""
   END {pin_name}
