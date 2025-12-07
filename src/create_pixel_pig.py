@@ -543,9 +543,10 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         
         print(f"\nConnecting {len(output_pins_sorted)} output pins to ground...")
         
-        # Find VGND power pin position (use first stripe from distributed positions)
+        # Find VGND power pin position (use last/rightmost stripe from distributed positions)
         # VGND_X_POSITIONS contains LEFT EDGE (llx) values
-        vgnd_llx = VGND_X_POSITIONS[0] if VGND_X_POSITIONS else None
+        # We use the last position since we're now using rightmost stripes
+        vgnd_llx = VGND_X_POSITIONS[-1] if VGND_X_POSITIONS else None
         vgnd_x = vgnd_llx + POWER_PIN_WIDTH/2 if vgnd_llx else None  # Center of stripe
         
         # Get Y range for VGND from distributed config
@@ -573,9 +574,14 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             via_x = vgnd_x  # Center of VGND
             via_y = GROUND_BUS_Y
             
-            # Metal4 ground bus extends from via location to past rightmost output
-            bus_x_start = via_x - TOPVIA1_SIZE/2 - 0.3  # Start with via enclosure (use larger via size)
-            bus_x_end = rightmost_output_x + PIN_WIDTH/2 + 0.5
+            # Metal4 ground bus extends from leftmost output to VGND via location
+            # The bus needs to span from the leftmost output pin to the VGND connection point
+            bus_x_left = leftmost_output_x - PIN_WIDTH/2 - 0.5  # Past leftmost output
+            bus_x_right = via_x + TOPVIA1_SIZE/2 + 0.3  # Past via with enclosure
+            
+            # Ensure proper ordering (handle case where VGND is to left or right of outputs)
+            bus_x_start = min(bus_x_left, bus_x_right)
+            bus_x_end = max(bus_x_left, bus_x_right)
             
             # Metal4 horizontal ground bus
             ground_bus = gdstk.rectangle(

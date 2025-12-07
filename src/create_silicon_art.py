@@ -207,8 +207,26 @@ POWER_PIN_Y_END = 151.83
 # These are the exact llx values from tt_um_factory_test.lef
 # VPWR: RECT 15.380 3.560 17.580 151.830 → llx=15.380
 # VGND: RECT 21.580 3.150 23.780 151.420 → llx=21.580
-VPWR_X_POSITIONS = [15.38, 54.25, 93.12, 131.99, 170.86]  # llx values
-VGND_X_POSITIONS = [21.58, 60.45, 99.32, 138.19, 177.06]  # llx values
+#
+# IMPORTANT: The TinyTapeout top-level power grid has multiple stripes crossing
+# each macro, BUT we only need to provide connection points at positions where
+# the grid actually needs to connect. Using fewer stripes reduces visual clutter.
+#
+# The error "via does not have shape on layer cut" occurs when:
+# - Power pins are at WRONG positions (e.g., x=5 instead of x=15, 54, 93, etc.)
+# - NOT because there are too few stripes
+#
+# We use the RIGHTMOST positions to minimize overlap with art (which is on the left):
+VPWR_X_POSITIONS_ALL = [15.38, 54.25, 93.12, 131.99, 170.86]  # All 5 positions
+VGND_X_POSITIONS_ALL = [21.58, 60.45, 99.32, 138.19, 177.06]  # All 5 positions
+
+# Number of power stripes to use (1-5). Using 1 minimizes visual impact on art.
+# The rightmost stripes are used first (x≈170-177 µm, away from art at x≈14-70 µm)
+NUM_POWER_STRIPES = 1
+
+# Select the rightmost N positions (reversed list, take first N)
+VPWR_X_POSITIONS = VPWR_X_POSITIONS_ALL[-NUM_POWER_STRIPES:]  # Rightmost position(s)
+VGND_X_POSITIONS = VGND_X_POSITIONS_ALL[-NUM_POWER_STRIPES:]  # Rightmost position(s)
 
 # Power pins list - now contains multiple positions per net
 # Format: (name, use_type, [list of x LEFT EDGE positions], y_start, y_end)
