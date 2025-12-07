@@ -127,13 +127,15 @@ ENABLE_BORDER = False  # Disable - border not needed
 ENABLE_PIG = True  # Pig art enabled - violations are not from the pig
 ENABLE_POWER_PINS = True  # Power pins REQUIRED by TinyTapeout pin check
 ENABLE_OUTPUT_GROUND = True  # Connect output pins to ground (VGND)
-ENABLE_VIA_TO_TOPMETAL = True  # Add via stack (Via4+Metal5+TopVia1) connection to VGND
+ENABLE_VIA_TO_TOPMETAL = True  # Add via stack with correct sizes (Via4=0.19µm, TopVia1=0.42µm)
 
 # Ground bus parameters - connects output pins to VGND
 GROUND_BUS_Y = 148.0      # Y position of horizontal Metal4 bus (within VGND Y range, below pins at 154.48)
 GROUND_BUS_WIDTH = 1.0    # Width of Metal4 ground bus (above 0.20µm min)
 GROUND_TRACE_WIDTH = 0.5  # Width of vertical traces from pins to bus
-VIA_SIZE = 0.42           # TopVia1 size - IHP standard minimum 0.42µm
+# Via sizes from IHP DRC rules - MUST be exact sizes!
+VIA4_SIZE = 0.19          # Via4 size - IHP DRC V4.a requires exactly 0.19µm
+TOPVIA1_SIZE = 0.42       # TopVia1 size - IHP DRC TV1.a requires exactly 0.42µm
 
 # =============================================================================
 # Pixel Font Definition (5x7 characters)
@@ -550,7 +552,7 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             via_y = GROUND_BUS_Y
             
             # Metal4 ground bus extends from via location to past rightmost output
-            bus_x_start = via_x - VIA_SIZE/2 - 0.3  # Start with via enclosure
+            bus_x_start = via_x - TOPVIA1_SIZE/2 - 0.3  # Start with via enclosure (use larger via size)
             bus_x_end = rightmost_output_x + PIN_WIDTH/2 + 0.5
             
             # Metal4 horizontal ground bus
@@ -578,52 +580,57 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             
             # Via stack to connect Metal4 ground bus to TopMetal1/VGND
             # Stack: Metal4 → Via4 → Metal5 → TopVia1 → TopMetal1
+            # IMPORTANT: Via sizes must be EXACT per IHP DRC rules!
+            #   - Via4: 0.19µm × 0.19µm (V4.a)
+            #   - TopVia1: 0.42µm × 0.42µm (TV1.a)
             if ENABLE_VIA_TO_TOPMETAL:
                 VIA_ENCLOSURE = 0.5  # Enclosure for all metals around vias
                 
-                # 1. Via4 (Metal4 to Metal5)
+                # 1. Via4 (Metal4 to Metal5) - must be exactly 0.19µm
                 via4_rect = gdstk.rectangle(
-                    (via_x - VIA_SIZE/2, via_y - VIA_SIZE/2),
-                    (via_x + VIA_SIZE/2, via_y + VIA_SIZE/2),
+                    (via_x - VIA4_SIZE/2, via_y - VIA4_SIZE/2),
+                    (via_x + VIA4_SIZE/2, via_y + VIA4_SIZE/2),
                     layer=VIA4_LAYER,
                     datatype=VIA4_DATATYPE
                 )
                 cell.add(via4_rect)
-                print(f"  Via4 at ({via_x:.1f}, {via_y:.1f})")
+                print(f"  Via4 ({VIA4_SIZE}µm) at ({via_x:.1f}, {via_y:.1f})")
                 
                 # 2. Metal4 via pad - ensure proper enclosure of Via4
                 m4_via_pad = gdstk.rectangle(
-                    (via_x - VIA_SIZE/2 - VIA_ENCLOSURE, via_y - VIA_SIZE/2 - VIA_ENCLOSURE),
-                    (via_x + VIA_SIZE/2 + VIA_ENCLOSURE, via_y + VIA_SIZE/2 + VIA_ENCLOSURE),
+                    (via_x - VIA4_SIZE/2 - VIA_ENCLOSURE, via_y - VIA4_SIZE/2 - VIA_ENCLOSURE),
+                    (via_x + VIA4_SIZE/2 + VIA_ENCLOSURE, via_y + VIA4_SIZE/2 + VIA_ENCLOSURE),
                     layer=PIN_DRAWING_LAYER,  # Metal4.drawing
                     datatype=PIN_DRAWING_DATATYPE
                 )
                 cell.add(m4_via_pad)
                 
-                # 3. Metal5 pad - connects Via4 to TopVia1
+                # 3. Metal5 pad - must be large enough to enclose both Via4 and TopVia1
+                # TopVia1 is larger (0.42µm) so use that as the reference
+                m5_pad_half = max(VIA4_SIZE/2, TOPVIA1_SIZE/2) + VIA_ENCLOSURE
                 m5_pad = gdstk.rectangle(
-                    (via_x - VIA_SIZE/2 - VIA_ENCLOSURE, via_y - VIA_SIZE/2 - VIA_ENCLOSURE),
-                    (via_x + VIA_SIZE/2 + VIA_ENCLOSURE, via_y + VIA_SIZE/2 + VIA_ENCLOSURE),
+                    (via_x - m5_pad_half, via_y - m5_pad_half),
+                    (via_x + m5_pad_half, via_y + m5_pad_half),
                     layer=METAL5_LAYER,
                     datatype=METAL5_DATATYPE
                 )
                 cell.add(m5_pad)
                 print(f"  Metal5 pad with {VIA_ENCLOSURE}µm enclosure")
                 
-                # 4. TopVia1 (Metal5 to TopMetal1)
+                # 4. TopVia1 (Metal5 to TopMetal1) - must be exactly 0.42µm
                 topvia1_rect = gdstk.rectangle(
-                    (via_x - VIA_SIZE/2, via_y - VIA_SIZE/2),
-                    (via_x + VIA_SIZE/2, via_y + VIA_SIZE/2),
+                    (via_x - TOPVIA1_SIZE/2, via_y - TOPVIA1_SIZE/2),
+                    (via_x + TOPVIA1_SIZE/2, via_y + TOPVIA1_SIZE/2),
                     layer=TOPVIA1_LAYER,
                     datatype=TOPVIA1_DATATYPE
                 )
                 cell.add(topvia1_rect)
-                print(f"  TopVia1 at ({via_x:.1f}, {via_y:.1f})")
+                print(f"  TopVia1 ({TOPVIA1_SIZE}µm) at ({via_x:.1f}, {via_y:.1f})")
                 
                 # 5. TopMetal1 connection - extends from VGND to cover TopVia1
                 via_enclosure_tm1 = 0.5
-                tm1_y_start = max(POWER_PIN_Y_START, via_y - VIA_SIZE/2 - via_enclosure_tm1)
-                tm1_y_end = min(POWER_PIN_Y_END, via_y + VIA_SIZE/2 + via_enclosure_tm1)
+                tm1_y_start = max(POWER_PIN_Y_START, via_y - TOPVIA1_SIZE/2 - via_enclosure_tm1)
+                tm1_y_end = min(POWER_PIN_Y_END, via_y + TOPVIA1_SIZE/2 + via_enclosure_tm1)
                 
                 topmetal_rect = gdstk.rectangle(
                     (vgnd_left, tm1_y_start),
