@@ -125,6 +125,52 @@ ENABLE_PIG = True  # Pig art enabled - violations are not from the pig
 ENABLE_POWER_PINS = True  # Power pins REQUIRED by TinyTapeout pin check
 
 # =============================================================================
+# Fill Blockage Configuration (for Microscope Visibility)
+# =============================================================================
+# Block metal fill above the art to make it visible under microscope.
+# Uses .nofill layers (datatype 22) which tell the fill insertion tool to skip
+# these regions on the specified metal layers.
+#
+# IMPORTANT: The nofill layers (datatype 22) may NOT be in the TinyTapeout
+# precheck whitelist (valid_layers_ihp_sg13g2 in tech_data.py). If precheck
+# fails with "Invalid layers in GDS", you have two options:
+#   1. Request TinyTapeout to add nofill layers to the whitelist
+#   2. Set ENABLE_FILL_BLOCKAGE = False below
+#
+# The TinyTapeout team suggested this approach ("try to block the fill directly
+# above the text, and make sure it doesn't go under the power rails"), so they
+# may be willing to add these layers to the whitelist upon request.
+#
+# IHP-SG13G2 nofill layer numbers (from sg13g2.lyp):
+#   Metal1.nofill    = 8/22
+#   Metal2.nofill    = 10/22
+#   Metal3.nofill    = 30/22
+#   Metal4.nofill    = 50/22
+#   Metal5.nofill    = 67/22
+#   TopMetal1.nofill = 126/22
+# =============================================================================
+ENABLE_FILL_BLOCKAGE = True  # Set to False if precheck rejects nofill layers
+
+# IHP-SG13G2 nofill layers (layer/datatype 22)
+# These layers tell the OpenLane fill insertion step to NOT place fill in these regions
+NOFILL_LAYERS = {
+    'Metal1':    {'layer': 8,   'datatype': 22, 'name': 'Metal1.nofill'},
+    'Metal2':    {'layer': 10,  'datatype': 22, 'name': 'Metal2.nofill'},
+    'Metal3':    {'layer': 30,  'datatype': 22, 'name': 'Metal3.nofill'},
+    'Metal4':    {'layer': 50,  'datatype': 22, 'name': 'Metal4.nofill'},
+    'Metal5':    {'layer': 67,  'datatype': 22, 'name': 'Metal5.nofill'},
+    'TopMetal1': {'layer': 126, 'datatype': 22, 'name': 'TopMetal1.nofill'},
+}
+
+# Which layers to block fill on (upper metals that would obscure the art)
+# Art is on Metal1-3, so we primarily block fill on Metal4, Metal5, TopMetal1
+# You can also add 'Metal1', 'Metal2', 'Metal3' to prevent fill between art pixels
+FILL_BLOCKAGE_LAYERS = ['Metal4', 'Metal5', 'TopMetal1']
+
+# Buffer around art for fill blockage (how much larger than the art region)
+FILL_BLOCKAGE_BUFFER = 2.0  # µm
+
+# =============================================================================
 # Pixel Font Definition (5x7 characters)
 # Each character is a list of (x, y) coordinates for filled pixels
 # Origin is bottom-left of character cell
@@ -348,6 +394,68 @@ def get_art_exclusion_zone(cell, buffer_distance, pig_bounds, text_bounds):
     if exclusion_rects:
         return gdstk.boolean(exclusion_rects, [], "or")
     return []
+
+
+def add_fill_blockage(cell, art_bounds, power_rail_x_max):
+    """
+    Add fill blockage shapes (nofill layers) above the art region.
+    
+    This prevents the OpenLane fill insertion step from placing metal fill
+    in the region above the art, making it visible under a microscope.
+    
+    Args:
+        cell: The GDS cell to add shapes to
+        art_bounds: (x1, y1, x2, y2) bounding box of the art region
+        power_rail_x_max: X coordinate of the right edge of power rails (to avoid)
+    
+    Returns:
+        List of layers where fill blockage was added
+    """
+    import gdstk
+    
+    if not art_bounds:
+        return []
+    
+    x1, y1, x2, y2 = art_bounds
+    
+    # Expand bounds by buffer
+    block_x1 = x1 - FILL_BLOCKAGE_BUFFER
+    block_y1 = y1 - FILL_BLOCKAGE_BUFFER
+    block_x2 = x2 + FILL_BLOCKAGE_BUFFER
+    block_y2 = y2 + FILL_BLOCKAGE_BUFFER
+    
+    # Make sure we don't go under the power rails (which are on the left side)
+    # Power rails are at x positions around 5.0 and 8.5, so leave margin
+    if block_x1 < power_rail_x_max + 1.0:
+        block_x1 = power_rail_x_max + 1.0
+        print(f"  Adjusted fill blockage x1 to {block_x1:.1f} to avoid power rails")
+    
+    # Clamp to die boundaries (with small margin)
+    block_x1 = max(1.0, block_x1)
+    block_y1 = max(1.0, block_y1)
+    block_x2 = min(DIE_WIDTH_UM - 1.0, block_x2)
+    block_y2 = min(DIE_HEIGHT_UM - 1.0, block_y2)
+    
+    added_layers = []
+    
+    for layer_name in FILL_BLOCKAGE_LAYERS:
+        if layer_name not in NOFILL_LAYERS:
+            print(f"  WARNING: Unknown nofill layer: {layer_name}")
+            continue
+        
+        layer_info = NOFILL_LAYERS[layer_name]
+        
+        # Create nofill rectangle
+        nofill_rect = gdstk.rectangle(
+            (block_x1, block_y1),
+            (block_x2, block_y2),
+            layer=layer_info['layer'],
+            datatype=layer_info['datatype']
+        )
+        cell.add(nofill_rect)
+        added_layers.append(layer_name)
+    
+    return added_layers, (block_x1, block_y1, block_x2, block_y2)
 
 
 def add_density_fill(cell, layer, datatype, margin_left, margin_right, margin_bottom, margin_top, exclusion_zone):
@@ -775,7 +883,45 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         print("Density fill: DISABLED (to reduce DRC violations)")
     
     # -------------------------------------------------------------------------
-    # 9. Save files
+    # 9. Add fill blockage to make art visible under microscope
+    # -------------------------------------------------------------------------
+    if ENABLE_FILL_BLOCKAGE:
+        print()
+        print("Adding fill blockage (nofill layers) above art region...")
+        print("  This blocks metal fill insertion above the art for microscope visibility")
+        
+        # Calculate combined art bounds (pig + text)
+        art_x1 = pig_offset_x
+        art_y1 = pig_offset_y
+        art_x2 = pig_offset_x + pig_width
+        art_y2 = pig_offset_y + pig_height
+        
+        # Include text in bounds if enabled
+        if ENABLE_TEXT and text_final_width > 0:
+            art_x1 = min(art_x1, text_final_x)
+            art_y1 = min(art_y1, text_final_y)
+            art_x2 = max(art_x2, text_final_x + text_final_width)
+            art_y2 = max(art_y2, text_final_y + text_final_height)
+        
+        art_bounds = (art_x1, art_y1, art_x2, art_y2)
+        
+        # Power rails are on the left side - don't block fill under them
+        # POWER_PINS positions: VGND at x=5.0, VPWR at x=8.5 (with width 1.8µm)
+        # So the rightmost edge of power rails is at 8.5 + 0.9 = 9.4µm
+        power_rail_x_max = 9.4
+        
+        layers_blocked, blockage_bounds = add_fill_blockage(cell, art_bounds, power_rail_x_max)
+        
+        print(f"  Art region: ({art_x1:.1f}, {art_y1:.1f}) to ({art_x2:.1f}, {art_y2:.1f})")
+        print(f"  Blockage region: ({blockage_bounds[0]:.1f}, {blockage_bounds[1]:.1f}) to ({blockage_bounds[2]:.1f}, {blockage_bounds[3]:.1f})")
+        print(f"  Layers with fill blockage: {', '.join(layers_blocked)}")
+        print(f"  NOTE: Fill blockage shapes are on .nofill layers (datatype 22)")
+    else:
+        print()
+        print("Fill blockage: DISABLED")
+    
+    # -------------------------------------------------------------------------
+    # 10. Save files
     # -------------------------------------------------------------------------
     gds_path = output_path / f"{TOP_MODULE}.gds"
     lib.write_gds(gds_path)
@@ -945,6 +1091,7 @@ def create_svg_preview(lib, output_path, width=1000, height=600):
 
 def main():
     import argparse
+    global ENABLE_FILL_BLOCKAGE, FILL_BLOCKAGE_LAYERS
     
     parser = argparse.ArgumentParser(
         description='Create combined Pixel Pig + Canary Token GDS'
@@ -956,9 +1103,21 @@ def main():
                        help='Output directory')
     parser.add_argument('--font-size', '-s', type=float, default=None,
                        help='Font size in µm (auto if not specified)')
+    parser.add_argument('--fill-blockage', action='store_true', default=True,
+                       help='Enable fill blockage for microscope visibility (default: enabled)')
+    parser.add_argument('--no-fill-blockage', action='store_true',
+                       help='Disable fill blockage (if precheck rejects nofill layers)')
+    parser.add_argument('--block-all-metals', action='store_true',
+                       help='Block fill on Metal1-3 as well (in addition to Metal4/5/TopMetal1)')
     
     args = parser.parse_args()
     text = args.text.replace('\\n', '\n')
+    
+    # Handle fill blockage options
+    if args.no_fill_blockage:
+        ENABLE_FILL_BLOCKAGE = False
+    if args.block_all_metals:
+        FILL_BLOCKAGE_LAYERS = ['Metal1', 'Metal2', 'Metal3', 'Metal4', 'Metal5', 'TopMetal1']
     
     print("=" * 65)
     print("Pixel Pig + Canary Token Silicon Art Generator")
@@ -989,6 +1148,18 @@ def main():
         print("  🟢 Metal2.drawing (10/0) = pig details + eyes + fill")
         print("  🔴 Metal3.drawing (30/0) = pig snout + key + fill")
         print()
+        if ENABLE_FILL_BLOCKAGE:
+            print("Fill blockage (for microscope visibility):")
+            print("  🔍 Fill blocked on layers: " + ", ".join(FILL_BLOCKAGE_LAYERS))
+            print("  📐 Uses .nofill layers (datatype 22) to block metal fill above art")
+            print("  ⚠️  Blockage avoids power rail region to maintain electrical connection")
+            print()
+            print("⚠️  PRECHECK WARNING:")
+            print("  The nofill layers (datatype 22) may not be in TinyTapeout's whitelist.")
+            print("  If precheck fails with 'Invalid layers in GDS', either:")
+            print("    1. Ask TinyTapeout to add nofill layers to valid_layers_ihp_sg13g2")
+            print("    2. Re-run with --no-fill-blockage to disable this feature")
+            print()
         print("DRC fixes applied:")
         print("  ✅ Text uses pixel font (simple rectangles, not gdstk.text)")
         print("  ✅ Border uses 4 separate rectangles (no self-touching corners)")
