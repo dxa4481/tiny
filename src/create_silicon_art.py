@@ -100,6 +100,7 @@ VIA4_DATATYPE = 0          # drawing datatype
 # Metal5 layer
 METAL5_LAYER = 67          # Metal5
 METAL5_DATATYPE = 0        # drawing datatype
+METAL5_PIN_DATATYPE = 2    # pin datatype (for VGND ground bus)
 
 # TopVia1 layer (via between Metal5 and TopMetal1)
 TOPVIA1_LAYER = 125        # TopVia1

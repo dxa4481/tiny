@@ -41,6 +41,7 @@ from create_silicon_art import (
     GDS_UNIT, GDS_PRECISION,
     VIA4_LAYER, VIA4_DATATYPE,        # Via between Metal4 and Metal5
     METAL5_LAYER, METAL5_DATATYPE,    # Metal5 layer
+    METAL5_PIN_DATATYPE,              # Metal5.pin layer for VGND ground bus
     TOPVIA1_LAYER, TOPVIA1_DATATYPE,  # Via between Metal5 and TopMetal1
 )
 
@@ -598,6 +599,7 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             # Metal4 horizontal ground bus
             m4_bus_lly = GROUND_BUS_Y - GROUND_BUS_WIDTH/2
             m4_bus_ury = GROUND_BUS_Y + GROUND_BUS_WIDTH/2
+            # Add .drawing shape
             ground_bus = gdstk.rectangle(
                 (bus_x_start, m4_bus_lly),
                 (bus_x_end, m4_bus_ury),
@@ -605,6 +607,14 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 datatype=PIN_DRAWING_DATATYPE
             )
             cell.add(ground_bus)
+            # Add .pin shape (required by precheck when declared in LEF)
+            ground_bus_pin = gdstk.rectangle(
+                (bus_x_start, m4_bus_lly),
+                (bus_x_end, m4_bus_ury),
+                layer=PIN_LAYER,  # Metal4.pin
+                datatype=PIN_DATATYPE
+            )
+            cell.add(ground_bus_pin)
             GROUND_BUS_METAL_BOUNDS.append(('Metal4', bus_x_start, m4_bus_lly, bus_x_end, m4_bus_ury))
             print(f"  Metal4 ground bus: x={bus_x_start:.1f} to {bus_x_end:.1f}, y={GROUND_BUS_Y:.1f}")
             
@@ -616,6 +626,7 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 trace_urx = x_pos + GROUND_TRACE_WIDTH/2
                 trace_lly = m4_bus_ury  # Start at top of bus
                 trace_ury = pin_bottom_y  # End at bottom of pin
+                # Add .drawing shape
                 trace = gdstk.rectangle(
                     (trace_llx, trace_lly),
                     (trace_urx, trace_ury),
@@ -623,6 +634,14 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                     datatype=PIN_DRAWING_DATATYPE
                 )
                 cell.add(trace)
+                # Add .pin shape (required by precheck when declared in LEF)
+                trace_pin = gdstk.rectangle(
+                    (trace_llx, trace_lly),
+                    (trace_urx, trace_ury),
+                    layer=PIN_LAYER,  # Metal4.pin
+                    datatype=PIN_DATATYPE
+                )
+                cell.add(trace_pin)
                 # Track each vertical trace as part of VGND
                 GROUND_BUS_METAL_BOUNDS.append(('Metal4', trace_llx, trace_lly, trace_urx, trace_ury))
             print(f"  Added {len(output_pins_sorted)} vertical traces to ground bus")
@@ -648,6 +667,7 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 m4_pad_lly = via_y - VIA4_SIZE/2 - VIA_ENCLOSURE
                 m4_pad_urx = via_x + VIA4_SIZE/2 + VIA_ENCLOSURE
                 m4_pad_ury = via_y + VIA4_SIZE/2 + VIA_ENCLOSURE
+                # Add .drawing shape
                 m4_via_pad = gdstk.rectangle(
                     (m4_pad_llx, m4_pad_lly),
                     (m4_pad_urx, m4_pad_ury),
@@ -655,6 +675,14 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                     datatype=PIN_DRAWING_DATATYPE
                 )
                 cell.add(m4_via_pad)
+                # Add .pin shape (required by precheck when declared in LEF)
+                m4_via_pad_pin = gdstk.rectangle(
+                    (m4_pad_llx, m4_pad_lly),
+                    (m4_pad_urx, m4_pad_ury),
+                    layer=PIN_LAYER,  # Metal4.pin
+                    datatype=PIN_DATATYPE
+                )
+                cell.add(m4_via_pad_pin)
                 GROUND_BUS_METAL_BOUNDS.append(('Metal4', m4_pad_llx, m4_pad_lly, m4_pad_urx, m4_pad_ury))
                 
                 # 3. Metal5 pad - must be large enough to enclose both Via4 and TopVia1
@@ -664,6 +692,7 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 m5_pad_lly = via_y - m5_pad_half
                 m5_pad_urx = via_x + m5_pad_half
                 m5_pad_ury = via_y + m5_pad_half
+                # Add .drawing shape
                 m5_pad = gdstk.rectangle(
                     (m5_pad_llx, m5_pad_lly),
                     (m5_pad_urx, m5_pad_ury),
@@ -671,6 +700,14 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                     datatype=METAL5_DATATYPE
                 )
                 cell.add(m5_pad)
+                # Add .pin shape (required by precheck when declared in LEF)
+                m5_pad_pin = gdstk.rectangle(
+                    (m5_pad_llx, m5_pad_lly),
+                    (m5_pad_urx, m5_pad_ury),
+                    layer=METAL5_LAYER,
+                    datatype=METAL5_PIN_DATATYPE
+                )
+                cell.add(m5_pad_pin)
                 GROUND_BUS_METAL_BOUNDS.append(('Metal5', m5_pad_llx, m5_pad_lly, m5_pad_urx, m5_pad_ury))
                 print(f"  Metal5 pad with {VIA_ENCLOSURE}µm enclosure")
                 
