@@ -66,10 +66,14 @@ PIN_Y_CENTER = 154.48
 # Signal pin layer (Metal4)
 PIN_LAYER = 50        # Metal4.pin
 PIN_DATATYPE = 2      # pin datatype
+PIN_DRAWING_LAYER = 50     # Metal4.drawing - REQUIRED to enclose pin shapes!
+PIN_DRAWING_DATATYPE = 0   # drawing datatype
 
 # Power pin layer (TopMetal1 - required by TinyTapeout precheck)
 POWER_PIN_LAYER = 126      # TopMetal1.pin
 POWER_PIN_DATATYPE = 2     # pin datatype
+POWER_DRAWING_LAYER = 126  # TopMetal1.drawing - REQUIRED to enclose pin shapes!
+POWER_DRAWING_DATATYPE = 0 # drawing datatype
 
 # Art/text layer - MUST use .drawing (datatype 0) for TinyTapeout whitelist
 # This means all art must meet DRC rules (min width, min space)
@@ -166,10 +170,11 @@ POWER_PIN_WIDTH = 1.8  # Above 1.64µm minimum
 POWER_PIN_Y_START = 5.0  # Within 10µm of bottom
 POWER_PIN_Y_END = DIE_HEIGHT_UM - 5.0  # Within 10µm of top
 
-# Power pin X positions (these don't have to match template exactly, just need to be valid)
+# Power pin X positions (must meet TopMetal1 min space = 1.64µm)
+# With width 1.8µm, pins at x=5.0 and x=8.5 give spacing of 1.7µm (>1.64µm)
 POWER_PINS = [
     ("VGND", "GROUND", 5.0),
-    ("VPWR", "POWER", 8.0),
+    ("VPWR", "POWER", 8.5),  # Moved from 8.0 to 8.5 to meet min space rule
 ]
 
 
@@ -479,3 +484,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
