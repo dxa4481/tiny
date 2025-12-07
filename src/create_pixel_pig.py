@@ -121,7 +121,7 @@ ART_BUFFER = 0.5     # 0.5µm clearance around art (very tight)
 ENABLE_DENSITY_FILL = False  # Disable density fill to reduce DRC violations
 ENABLE_TEXT = False  # Disable text to reduce DRC violations  
 ENABLE_BORDER = False  # Disable border to reduce DRC violations
-ENABLE_PIG = True  # Re-enable pig art - DRC violations not from art
+ENABLE_PIG = True  # Pig art enabled - violations are not from the pig
 ENABLE_POWER_PINS = True  # Power pins REQUIRED by TinyTapeout pin check
 
 # =============================================================================
@@ -532,14 +532,24 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         MIN_PIXEL_SIZE = 0.5  # Well above 0.20µm minimum
         pixel_size = max(pixel_size, MIN_PIXEL_SIZE)
         
-        pig_width = GRID_WIDTH * pixel_size
-        pig_height = GRID_HEIGHT * pixel_size
+        # Add gap between pixels to prevent DRC violations from merged shapes
+        # When adjacent pixels touch, they create notches that can violate spacing rules
+        # Gap must be >= max metal spacing (0.21µm for Metal2/3)
+        PIXEL_GAP = 0.25  # 0.25 µm gap between pixels
+        pixel_pitch = pixel_size + PIXEL_GAP  # Total grid spacing
         
-        print(f"Pig pixel size: {pixel_size:.2f} µm (min DRC: 0.20 µm)")
+        # Reduce pixel size slightly to account for gap
+        actual_pixel_size = pixel_size - PIXEL_GAP
+        
+        pig_width = GRID_WIDTH * pixel_pitch
+        pig_height = GRID_HEIGHT * pixel_pitch
+        
+        print(f"Pig pixel size: {actual_pixel_size:.2f} µm (min DRC: 0.20 µm)")
+        print(f"Pig pixel gap: {PIXEL_GAP:.2f} µm (min DRC: 0.21 µm)")
         print(f"Pig dimensions: {pig_width:.1f} x {pig_height:.1f} µm")
         print(f"Pig position: ({pig_offset_x:.1f}, {pig_offset_y:.1f})")
         
-        # Add all pig pixels
+        # Add all pig pixels with gaps between them
         pixel_data = [
             ('light_pink', LIGHT_PINK_PIXELS),
             ('dark_pink', DARK_PINK_PIXELS),
@@ -552,12 +562,13 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         for color_name, positions in pixel_data:
             layer_info = PIXEL_LAYERS[color_name]
             for (gx, gy) in positions:
-                x = pig_offset_x + gx * pixel_size
-                y = pig_offset_y + gy * pixel_size
+                # Use pixel_pitch for grid position, actual_pixel_size for shape
+                x = pig_offset_x + gx * pixel_pitch
+                y = pig_offset_y + gy * pixel_pitch
                 
                 rect = gdstk.rectangle(
                     (x, y),
-                    (x + pixel_size, y + pixel_size),
+                    (x + actual_pixel_size, y + actual_pixel_size),
                     layer=layer_info['layer'],
                     datatype=layer_info['datatype']
                 )
