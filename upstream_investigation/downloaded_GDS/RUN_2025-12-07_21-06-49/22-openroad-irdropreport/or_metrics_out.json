@@ -1,0 +1,16 @@
+{
+	"design_powergrid__voltage__worst__net:vdpwr__corner:nom_typ_1p20V_25C": 1.19998,
+	"design_powergrid__drop__average__net:vdpwr__corner:nom_typ_1p20V_25C": 1.2,
+	"design_powergrid__drop__worst__net:vdpwr__corner:nom_typ_1p20V_25C": 2.16682e-05,
+	"design_powergrid__voltage__worst__net:vapwr__corner:nom_typ_1p20V_25C": 0,
+	"design_powergrid__drop__average__net:vapwr__corner:nom_typ_1p20V_25C": 0,
+	"design_powergrid__drop__worst__net:vapwr__corner:nom_typ_1p20V_25C": 0,
+	"design_powergrid__voltage__worst__net:vgnd__corner:nom_typ_1p20V_25C": 2.28119e-05,
+	"design_powergrid__drop__average__net:vgnd__corner:nom_typ_1p20V_25C": 3.27836e-06,
+	"design_powergrid__drop__worst__net:vgnd__corner:nom_typ_1p20V_25C": 2.28119e-05,
+	"design_powergrid__voltage__worst__net:vgnd__corner:nom_typ_1p20V_25C": 2.28119e-05,
+	"design_powergrid__drop__average__net:vgnd__corner:nom_typ_1p20V_25C": 3.27836e-06,
+	"design_powergrid__drop__worst__net:vgnd__corner:nom_typ_1p20V_25C": 2.28119e-05,
+	"flow__warnings__count": 4,
+	"flow__errors__count": 0
+}

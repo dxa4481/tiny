@@ -1,0 +1,760 @@
+{
+    "STD_CELL_LIBRARY": "sg13g2_stdcell",
+    "VDD_PIN": "VPWR",
+    "VDD_PIN_VOLTAGE": 1.2,
+    "GND_PIN": "VGND",
+    "TECH_LEFS": {
+        "nom_*": "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lef/sg13g2_tech.lef",
+        "min_*": "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lef/sg13g2_tech.lef",
+        "max_*": "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lef/sg13g2_tech.lef"
+    },
+    "PRIMARY_GDSII_STREAMOUT_TOOL": "magic",
+    "DEFAULT_MAX_TRAN": null,
+    "SIGNAL_WIRE_RC_LAYERS": null,
+    "CLOCK_WIRE_RC_LAYERS": null,
+    "DEFAULT_CORNER": "nom_typ_1p20V_25C",
+    "STA_CORNERS": [
+        "nom_fast_1p32V_m40C",
+        "nom_slow_1p08V_125C",
+        "nom_typ_1p20V_25C"
+    ],
+    "FP_IO_HLAYER": "Metal3",
+    "FP_IO_VLAYER": "Metal2",
+    "RT_MIN_LAYER": "Metal2",
+    "RT_MAX_LAYER": "Metal5",
+    "SCL_GROUND_PINS": [
+        "VSS"
+    ],
+    "SCL_POWER_PINS": [
+        "VDD"
+    ],
+    "TRISTATE_CELLS": [
+        "sg13g2_ebufn_*",
+        "sg13g2_einvn_*"
+    ],
+    "FILL_CELLS": [
+        "sg13g2_fill_1",
+        "sg13g2_fill_2"
+    ],
+    "DECAP_CELLS": [
+        "sg13g2_decap_*"
+    ],
+    "LIB": {
+        "nom_typ_1p20V_25C": [
+            "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_typ_1p20V_25C.lib"
+        ],
+        "nom_fast_1p32V_m40C": [
+            "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_fast_1p32V_m40C.lib"
+        ],
+        "nom_slow_1p08V_125C": [
+            "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lib/sg13g2_stdcell_slow_1p08V_125C.lib"
+        ]
+    },
+    "CELL_LEFS": [
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/lef/sg13g2_stdcell.lef"
+    ],
+    "CELL_GDS": [
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/gds/sg13g2_stdcell.gds"
+    ],
+    "CELL_VERILOG_MODELS": [
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/verilog/sg13g2_stdcell.v"
+    ],
+    "CELL_BB_VERILOG_MODELS": null,
+    "CELL_SPICE_MODELS": [
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/spice/sg13g2_stdcell.spice"
+    ],
+    "CELL_CDLS": [
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/cdl/sg13g2_stdcell.cdl"
+    ],
+    "SYNTH_EXCLUDED_CELL_FILE": "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/no_synth_cells.txt",
+    "PNR_EXCLUDED_CELL_FILE": "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/no_drc_cells.txt",
+    "OUTPUT_CAP_LOAD": 6,
+    "MAX_FANOUT_CONSTRAINT": 10,
+    "MAX_TRANSITION_CONSTRAINT": null,
+    "MAX_CAPACITANCE_CONSTRAINT": null,
+    "CLOCK_UNCERTAINTY_CONSTRAINT": 0.25,
+    "CLOCK_TRANSITION_CONSTRAINT": 0.15,
+    "TIME_DERATING_CONSTRAINT": 5,
+    "IO_DELAY_CONSTRAINT": 20,
+    "SYNTH_DRIVING_CELL": "sg13g2_buf_4/X",
+    "SYNTH_CLK_DRIVING_CELL": null,
+    "SYNTH_TIEHI_CELL": "sg13g2_tiehi/L_HI",
+    "SYNTH_TIELO_CELL": "sg13g2_tielo/L_LO",
+    "SYNTH_BUFFER_CELL": "sg13g2_buf_1/A/X",
+    "PLACE_SITE": "CoreSite",
+    "CELL_PAD_EXCLUDE": [
+        "sg13g2_fill_*",
+        "sg13g2_decap_*"
+    ],
+    "DIODE_CELL": "sg13g2_antennanp",
+    "WELLTAP_CELL": null,
+    "ENDCAP_CELL": null,
+    "DESIGN_DIR": ".",
+    "PDK_ROOT": "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK",
+    "DESIGN_NAME": "tt_ihp_wrapper",
+    "PDK": "ihp-sg13g2",
+    "CLOCK_PERIOD": 10,
+    "CLOCK_PORT": null,
+    "CLOCK_NET": null,
+    "VDD_NETS": [
+        "vdpwr",
+        "vapwr"
+    ],
+    "GND_NETS": [
+        "vgnd",
+        "vgnd"
+    ],
+    "DIE_AREA": [
+        0,
+        0,
+        3600,
+        5000
+    ],
+    "EXTRA_EXCLUDED_CELLS": null,
+    "MACROS": {
+        "tt_mux": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_mux.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_mux.lef"
+            ],
+            "instances": {
+                "top_I.branch[0].check_mask.mux_I": {
+                    "location": [
+                        447.36,
+                        2260.44
+                    ],
+                    "orientation": "N"
+                },
+                "top_I.branch[1].check_mask.mux_I": {
+                    "location": [
+                        447.36,
+                        2657.34
+                    ],
+                    "orientation": "FS"
+                },
+                "top_I.branch[2].check_mask.mux_I": {
+                    "location": [
+                        1850.88,
+                        2260.44
+                    ],
+                    "orientation": "FN"
+                },
+                "top_I.branch[3].check_mask.mux_I": {
+                    "location": [
+                        1850.88,
+                        2657.34
+                    ],
+                    "orientation": "S"
+                },
+                "top_I.branch[4].check_mask.mux_I": {
+                    "location": [
+                        447.36,
+                        1863.54
+                    ],
+                    "orientation": "N"
+                },
+                "top_I.branch[5].check_mask.mux_I": {
+                    "location": [
+                        447.36,
+                        3054.24
+                    ],
+                    "orientation": "FS"
+                },
+                "top_I.branch[7].check_mask.mux_I": {
+                    "location": [
+                        1850.88,
+                        3054.24
+                    ],
+                    "orientation": "S"
+                },
+                "top_I.branch[8].check_mask.mux_I": {
+                    "location": [
+                        447.36,
+                        1466.64
+                    ],
+                    "orientation": "N"
+                },
+                "top_I.branch[9].check_mask.mux_I": {
+                    "location": [
+                        447.36,
+                        3451.14
+                    ],
+                    "orientation": "FS"
+                },
+                "top_I.branch[10].check_mask.mux_I": {
+                    "location": [
+                        1850.88,
+                        1466.64
+                    ],
+                    "orientation": "FN"
+                },
+                "top_I.branch[13].check_mask.mux_I": {
+                    "location": [
+                        447.36,
+                        3848.04
+                    ],
+                    "orientation": "FS"
+                },
+                "top_I.branch[14].check_mask.mux_I": {
+                    "location": [
+                        1850.88,
+                        1069.74
+                    ],
+                    "orientation": "FN"
+                },
+                "top_I.branch[15].check_mask.mux_I": {
+                    "location": [
+                        1850.88,
+                        3848.04
+                    ],
+                    "orientation": "S"
+                },
+                "top_I.branch[16].check_mask.mux_I": {
+                    "location": [
+                        447.36,
+                        672.84
+                    ],
+                    "orientation": "N"
+                },
+                "top_I.branch[17].check_mask.mux_I": {
+                    "location": [
+                        447.36,
+                        4244.94
+                    ],
+                    "orientation": "FS"
+                },
+                "top_I.branch[18].check_mask.mux_I": {
+                    "location": [
+                        1850.88,
+                        672.84
+                    ],
+                    "orientation": "FN"
+                },
+                "top_I.branch[19].check_mask.mux_I": {
+                    "location": [
+                        1850.88,
+                        4244.94
+                    ],
+                    "orientation": "S"
+                }
+            },
+            "vh": [],
+            "nl": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/verilog/tt_mux.v"
+            ],
+            "pnl": [],
+            "spef": {
+                "nom_*": [
+                    "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/spef/tt_mux.nom.spef"
+                ]
+            },
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_pg_1v5_ll_1": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_pg_1v5_ll_1.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_pg_1v5_ll_1.lef"
+            ],
+            "instances": {
+                "top_I.branch[0].check_mask.block[0].um_I.block_0_0.tt_pg_vdd_I": {
+                    "location": [
+                        1534.56,
+                        2339.82
+                    ],
+                    "orientation": "FS"
+                },
+                "top_I.branch[0].check_mask.block[1].um_I.block_0_1.tt_pg_vdd_I": {
+                    "location": [
+                        1534.56,
+                        2101.68
+                    ],
+                    "orientation": "N"
+                },
+                "top_I.branch[16].check_mask.block[1].um_I.block_16_1.tt_pg_vdd_I": {
+                    "location": [
+                        1534.56,
+                        514.08
+                    ],
+                    "orientation": "N"
+                },
+                "top_I.branch[16].check_mask.block[3].um_I.block_16_3.tt_pg_vdd_I": {
+                    "location": [
+                        1317.12,
+                        514.08
+                    ],
+                    "orientation": "N"
+                },
+                "top_I.branch[16].check_mask.block[5].um_I.block_16_5.tt_pg_vdd_I": {
+                    "location": [
+                        1099.68,
+                        514.08
+                    ],
+                    "orientation": "N"
+                },
+                "top_I.branch[16].check_mask.block[7].um_I.block_16_7.tt_pg_vdd_I": {
+                    "location": [
+                        882.24,
+                        514.08
+                    ],
+                    "orientation": "N"
+                },
+                "top_I.branch[16].check_mask.block[9].um_I.block_16_9.tt_pg_vdd_I": {
+                    "location": [
+                        664.8,
+                        514.08
+                    ],
+                    "orientation": "N"
+                },
+                "top_I.branch[16].check_mask.block[11].um_I.block_16_11.tt_pg_vdd_I": {
+                    "location": [
+                        447.36,
+                        514.08
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/verilog/tt_pg_1v5_ll_1.v"
+            ],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_um_chip_rom": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_um_chip_rom.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_um_chip_rom.lef"
+            ],
+            "instances": {
+                "top_I.branch[0].check_mask.block[0].um_I.block_0_0.tt_um_I": {
+                    "location": [
+                        1547.04,
+                        2339.82
+                    ],
+                    "orientation": "FS"
+                }
+            },
+            "vh": [],
+            "nl": [],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_um_factory_test": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_um_factory_test.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_um_factory_test.lef"
+            ],
+            "instances": {
+                "top_I.branch[0].check_mask.block[1].um_I.block_0_1.tt_um_I": {
+                    "location": [
+                        1547.04,
+                        2101.68
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_pg_1v5_ll_2": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_pg_1v5_ll_2.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_pg_1v5_ll_2.lef"
+            ],
+            "instances": {
+                "top_I.branch[10].check_mask.block[0].um_I.block_10_0.tt_pg_vdd_I": {
+                    "location": [
+                        2055.84,
+                        1546.02
+                    ],
+                    "orientation": "S"
+                },
+                "top_I.branch[10].check_mask.block[2].um_I.block_10_2.tt_pg_vdd_I": {
+                    "location": [
+                        2273.28,
+                        1546.02
+                    ],
+                    "orientation": "S"
+                }
+            },
+            "vh": [],
+            "nl": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/verilog/tt_pg_1v5_ll_2.v"
+            ],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_um_rejunity_vga_logo": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_um_rejunity_vga_logo.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_um_rejunity_vga_logo.lef"
+            ],
+            "instances": {
+                "top_I.branch[10].check_mask.block[0].um_I.block_10_0.tt_um_I": {
+                    "location": [
+                        1850.88,
+                        1546.02
+                    ],
+                    "orientation": "S"
+                }
+            },
+            "vh": [],
+            "nl": [],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_um_rebeccargb_vga_pride": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_um_rebeccargb_vga_pride.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_um_rebeccargb_vga_pride.lef"
+            ],
+            "instances": {
+                "top_I.branch[10].check_mask.block[2].um_I.block_10_2.tt_um_I": {
+                    "location": [
+                        2068.32,
+                        1546.02
+                    ],
+                    "orientation": "S"
+                }
+            },
+            "vh": [],
+            "nl": [],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_um_aksp_mbist_mbisr": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_um_aksp_mbist_mbisr.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_um_aksp_mbist_mbisr.lef"
+            ],
+            "instances": {
+                "top_I.branch[16].check_mask.block[1].um_I.block_16_1.tt_um_I": {
+                    "location": [
+                        1547.04,
+                        514.08
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_um_silicon_art": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_um_silicon_art.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_um_silicon_art.lef"
+            ],
+            "instances": {
+                "top_I.branch[16].check_mask.block[3].um_I.block_16_3.tt_um_I": {
+                    "location": [
+                        1329.6,
+                        514.08
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_um_urish_simon": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_um_urish_simon.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_um_urish_simon.lef"
+            ],
+            "instances": {
+                "top_I.branch[16].check_mask.block[5].um_I.block_16_5.tt_um_I": {
+                    "location": [
+                        1112.16,
+                        514.08
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_um_rebeccargb_intercal_alu": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_um_rebeccargb_intercal_alu.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_um_rebeccargb_intercal_alu.lef"
+            ],
+            "instances": {
+                "top_I.branch[16].check_mask.block[7].um_I.block_16_7.tt_um_I": {
+                    "location": [
+                        894.72,
+                        514.08
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_um_rebeccargb_hardware_utf8": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_um_rebeccargb_hardware_utf8.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_um_rebeccargb_hardware_utf8.lef"
+            ],
+            "instances": {
+                "top_I.branch[16].check_mask.block[9].um_I.block_16_9.tt_um_I": {
+                    "location": [
+                        677.28,
+                        514.08
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_um_rebeccargb_universal_decoder": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_um_rebeccargb_universal_decoder.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_um_rebeccargb_universal_decoder.lef"
+            ],
+            "instances": {
+                "top_I.branch[16].check_mask.block[11].um_I.block_16_11.tt_um_I": {
+                    "location": [
+                        459.84,
+                        514.08
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_ctrl": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_ctrl.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_ctrl.lef"
+            ],
+            "instances": {
+                "top_I.ctrl_I": {
+                    "location": [
+                        1752,
+                        2419.2
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/verilog/tt_ctrl.v"
+            ],
+            "pnl": [],
+            "spef": {
+                "nom_*": [
+                    "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/spef/tt_ctrl.nom.spef"
+                ]
+            },
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_logo_top": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_logo_top.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_logo_top.lef"
+            ],
+            "instances": {
+                "top_I.logo_top_I": {
+                    "location": [
+                        1775,
+                        4425.52
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/verilog/tt_logo_top.v"
+            ],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_logo_bottom": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_logo_bottom.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_logo_bottom.lef"
+            ],
+            "instances": {
+                "top_I.logo_bottom_I": {
+                    "location": [
+                        1775,
+                        517.86
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/verilog/tt_logo_bottom.v"
+            ],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        },
+        "tt_logo_corner": {
+            "gds": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/tt_logo_corner.gds"
+            ],
+            "lef": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/tt_logo_corner.lef"
+            ],
+            "instances": {
+                "top_I.logo_corner_I": {
+                    "location": [
+                        50,
+                        50
+                    ],
+                    "orientation": "N"
+                }
+            },
+            "vh": [],
+            "nl": [
+                "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/verilog/tt_logo_corner.v"
+            ],
+            "pnl": [],
+            "spef": {},
+            "lib": {},
+            "spice": [],
+            "sdf": {},
+            "json_h": null
+        }
+    },
+    "EXTRA_LEFS": [
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/lef/sg13g2_io.lef",
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/lef/bondpad_70x70.lef"
+    ],
+    "EXTRA_VERILOG_MODELS": [
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/verilog/tt_um_all.v"
+    ],
+    "EXTRA_SPICE_MODELS": null,
+    "EXTRA_CDLS": null,
+    "EXTRA_LIBS": [
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/lib/sg13g2_io_dummy.lib"
+    ],
+    "EXTRA_GDS": [
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_io/gds/sg13g2_io.gds",
+        "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/gds/bondpad_70x70.gds"
+    ],
+    "FALLBACK_SDC": "/nix/store/ara2l4shfgx008zbq6l63pzps2cgazvy-python3-3.12.10-env/lib/python3.12/site-packages/librelane/scripts/base.sdc",
+    "MAGIC_EXT_USE_GDS": false,
+    "NETGEN_SETUP": "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.tech/netgen/ihp-sg13g2_setup.tcl",
+    "LVS_INCLUDE_MARCO_NETLISTS": false,
+    "LVS_FLATTEN_CELLS": [
+        "tt_logo_top",
+        "tt_logo_bottom",
+        "tt_logo_corner"
+    ],
+    "meta": {
+        "librelane_version": "3.0.0.dev32",
+        "step": "Netgen.LVS"
+    }
+}

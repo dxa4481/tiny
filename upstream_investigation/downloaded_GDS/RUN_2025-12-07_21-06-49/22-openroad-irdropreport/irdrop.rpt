@@ -1,0 +1,49 @@
++ analyze_power_grid -net vdpwr -voltage_file /home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/runs/RUN_2025-12-07_21-06-49/22-openroad-irdropreport/net-vdpwr.csv
+[INFO PSM-0040] All shapes on net vdpwr are connected.
+########## IR report #################
+Net              : vdpwr
+Corner           : nom_typ_1p20V_25C
+Supply voltage   : 1.20e+00 V
+Worstcase voltage: 1.20e+00 V
+Average voltage  : 1.20e+00 V
+Average IR drop  : 3.40e-06 V
+Worstcase IR drop: 2.17e-05 V
+Percentage drop  : 0.00 %
+######################################
++ analyze_power_grid -net vapwr -voltage_file /home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/runs/RUN_2025-12-07_21-06-49/22-openroad-irdropreport/net-vapwr.csv
+[INFO PSM-0040] All shapes on net vapwr are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+########## IR report #################
+Net              : vapwr
+Corner           : nom_typ_1p20V_25C
+Supply voltage   : 0.00e+00 V
+Worstcase voltage: 0.00e+00 V
+Average voltage  : 0.00e+00 V
+Average IR drop  : 0.00e+00 V
+Worstcase IR drop: 0.00e+00 V
+Percentage drop  : 0.00 %
+######################################
++ analyze_power_grid -net vgnd -voltage_file /home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/runs/RUN_2025-12-07_21-06-49/22-openroad-irdropreport/net-vgnd.csv
+[INFO PSM-0040] All shapes on net vgnd are connected.
+########## IR report #################
+Net              : vgnd
+Corner           : nom_typ_1p20V_25C
+Supply voltage   : 0.00e+00 V
+Worstcase voltage: 2.28e-05 V
+Average voltage  : 3.28e-06 V
+Average IR drop  : 3.28e-06 V
+Worstcase IR drop: 2.28e-05 V
+Percentage drop  : 0.00 %
+######################################
++ analyze_power_grid -net vgnd -voltage_file /home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/runs/RUN_2025-12-07_21-06-49/22-openroad-irdropreport/net-vgnd.csv
+[INFO PSM-0040] All shapes on net vgnd are connected.
+########## IR report #################
+Net              : vgnd
+Corner           : nom_typ_1p20V_25C
+Supply voltage   : 0.00e+00 V
+Worstcase voltage: 2.28e-05 V
+Average voltage  : 3.28e-06 V
+Average IR drop  : 3.28e-06 V
+Worstcase IR drop: 2.28e-05 V
+Percentage drop  : 0.00 %
+######################################

@@ -1,0 +1,13 @@
+
+===========================================================================
+Clock Skew (Hold)
+============================================================================
+======================= nom_fast_1p32V_m40C Corner ===================================
+
+Clock ctrl_inc
+1.603926 source latency top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK ^
+-1.605537 target latency top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK ^
+-0.001611 CRPR
+--------------
+-0.003222 hold skew
+

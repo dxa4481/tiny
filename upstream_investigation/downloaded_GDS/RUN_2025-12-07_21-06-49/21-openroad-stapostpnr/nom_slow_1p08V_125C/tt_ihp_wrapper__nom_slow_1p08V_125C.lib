@@ -1,0 +1,246 @@
+library (tt_ihp_wrapper) {
+  comment                        : "";
+  delay_model                    : table_lookup;
+  simulation                     : false;
+  capacitive_load_unit (1,pF);
+  leakage_power_unit             : 1pW;
+  current_unit                   : "1uA";
+  pulling_resistance_unit        : "1kohm";
+  time_unit                      : "1ns";
+  voltage_unit                   : "1v";
+  library_features(report_delay_calculation);
+
+  input_threshold_pct_rise : 50;
+  input_threshold_pct_fall : 50;
+  output_threshold_pct_rise : 50;
+  output_threshold_pct_fall : 50;
+  slew_lower_threshold_pct_rise : 20;
+  slew_lower_threshold_pct_fall : 20;
+  slew_upper_threshold_pct_rise : 80;
+  slew_upper_threshold_pct_fall : 80;
+  slew_derate_from_library : 1.0;
+
+
+  nom_process                    : 1.0;
+  nom_temperature                : 125.0;
+  nom_voltage                    : 1.08;
+
+  type ("pad_raw") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 50;
+    bit_from : 49;
+    bit_to : 0;
+  }
+
+  cell ("tt_ihp_wrapper") {
+    area : 4281427.500 
+    is_macro_cell : true;
+    bus("pad_raw") {
+      bus_type : pad_raw;
+      direction : inout;
+      capacitance : 0.0000;
+    pin("pad_raw[49]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[48]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[47]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[46]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[45]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[44]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[43]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[42]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[41]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[40]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[39]") {
+      direction : inout;
+      capacitance : 0.0010;
+    }
+    pin("pad_raw[38]") {
+      direction : inout;
+      capacitance : 0.0010;
+    }
+    pin("pad_raw[37]") {
+      direction : inout;
+      capacitance : 0.0010;
+    }
+    pin("pad_raw[36]") {
+      direction : inout;
+      capacitance : 0.0010;
+    }
+    pin("pad_raw[35]") {
+      direction : inout;
+      capacitance : 0.0010;
+    }
+    pin("pad_raw[34]") {
+      direction : inout;
+      capacitance : 0.0010;
+    }
+    pin("pad_raw[33]") {
+      direction : inout;
+      capacitance : 0.0010;
+    }
+    pin("pad_raw[32]") {
+      direction : inout;
+      capacitance : 0.0010;
+    }
+    pin("pad_raw[31]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[30]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[29]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[28]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[27]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[26]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[25]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[24]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[23]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[22]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[21]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[20]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[19]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[18]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[17]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[16]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[15]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[14]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[13]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[12]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[11]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[10]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[9]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[8]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[7]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[6]") {
+      direction : inout;
+      capacitance : 0.0000;
+    }
+    pin("pad_raw[5]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[4]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[3]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[2]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[1]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    pin("pad_raw[0]") {
+      direction : inout;
+      capacitance : 0.0150;
+    }
+    }
+  }
+
+}
