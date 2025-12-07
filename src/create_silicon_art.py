@@ -92,8 +92,16 @@ LABEL_DATATYPE = 1    # label datatype
 POWER_LABEL_LAYER = 126    # TopMetal1
 POWER_LABEL_DATATYPE = 1   # label datatype
 
-# TopVia1 layer (via between Metal4 and TopMetal1)
+# Via4 layer (via between Metal4 and Metal5)
 # Layer numbers from: IHP-Open-PDK/ihp-sg13g2/libs.tech/klayout/tech/sg13g2.lyp
+VIA4_LAYER = 66            # Via4
+VIA4_DATATYPE = 0          # drawing datatype
+
+# Metal5 layer
+METAL5_LAYER = 67          # Metal5
+METAL5_DATATYPE = 0        # drawing datatype
+
+# TopVia1 layer (via between Metal5 and TopMetal1)
 TOPVIA1_LAYER = 125        # TopVia1
 TOPVIA1_DATATYPE = 0       # drawing datatype
 
