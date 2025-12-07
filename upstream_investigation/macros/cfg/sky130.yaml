@@ -1,0 +1,116 @@
+pdk:
+  name: 'sky130A'
+  tech: 'sky130'
+  die:
+    width: 3166630
+    height: 4766630
+    margin:
+      left:   95000
+      right:  95000
+      top:    95000
+      bottom: 90000
+  site:
+    width:  460
+    height: 2720
+  pwrgate:
+    vdd:
+      name: 'tt_pg_1v8'
+      width: 9200
+    vaa:
+      name: 'tt_pg_3v3'
+      width: 13800
+  analog:
+    switch: 'tt_asw_3v3'
+  tracks:
+    li1:
+      x:
+        offset: 230
+        pitch:  460
+        width:  170
+      y:
+        offset: 170
+        pitch:  340
+        width:  170
+    met1:
+      x:
+        offset: 230
+        pitch:  460
+        width:  230
+      y:
+        offset: 170
+        pitch:  340
+        width:  140
+    met2:
+      x:
+        offset: 230
+        pitch:  460
+        width:  140
+      y:
+        offset: 170
+        pitch:  340
+        width:  170
+    met3:
+      x:
+        offset: 460
+        pitch:  920
+        width:  300
+      y:
+        offset: 340
+        pitch:  680
+        width:  300
+    met4:
+      x:
+        offset: 460
+        pitch:  920
+        width:  300
+      y:
+        offset: 340
+        pitch:  680
+        width:  300
+    met5:
+      x:
+        offset: 1700
+        pitch:  3400
+        width:  1600
+      y:
+        offset: 1700
+        pitch:  3400
+        width:  1600
+tt:
+  grid:     # In number of blocks
+    x: 16   # Must be divisible by 4
+    y: 32   # Must be EVEN
+  block:
+    w: -1
+    h: -1
+  margin:   # In 'sites'
+    x: 4
+    y: 1
+  uio:
+    ae: 12
+    au:  8
+    i:  10
+    o:   8
+    io:  8
+  spine:
+    vlayer: 'met4'
+    hlayer: 'met3'
+  analog:
+    - mux_id: [ 11 ]
+      pins:
+        0:  2545510
+        1:  2771510
+        2:  2996510
+        3:  3222510
+        4:  3447510
+        5:  3672510
+    - mux_id: [ 12 ]
+      pins:
+        6:  1840120
+        7:  1624120
+        8:  1408120
+        9:  1192120
+        10:  976120
+        11:  760120
+  logo:
+    size: 100000

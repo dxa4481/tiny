@@ -1,0 +1,9 @@
+{
+    "json_h": "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/runs/RUN_2025-12-07_05-22-44/01-yosys-jsonheader/tt_ihp_wrapper.h.json",
+    "nl": "/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/runs/RUN_2025-12-07_05-22-44/02-yosys-synthesis/tt_ihp_wrapper.nl.v",
+    "metrics": {
+        "design__instance__count": 105,
+        "design__instance_unmapped__count": 0,
+        "synthesis__check_error__count": 53
+    }
+}

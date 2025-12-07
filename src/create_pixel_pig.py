@@ -36,6 +36,8 @@ from create_silicon_art import (
     TOP_MODULE,
     SIGNAL_PINS, POWER_PINS,
     POWER_PIN_WIDTH, POWER_PIN_Y_START, POWER_PIN_Y_END,
+    POWER_PINS_DISTRIBUTED,  # New distributed power pin configuration
+    VGND_X_POSITIONS, VPWR_X_POSITIONS,  # Individual stripe positions
     GDS_UNIT, GDS_PRECISION,
     VIA4_LAYER, VIA4_DATATYPE,        # Via between Metal4 and Metal5
     METAL5_LAYER, METAL5_DATATYPE,    # Metal5 layer
@@ -483,33 +485,46 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
     # -------------------------------------------------------------------------
     # DRC Rule Pin.g requires: TopMetal1 enclosure of TopMetal1:pin = 0.00
     # This means every pin shape must be covered by a TopMetal1.drawing shape
+    #
+    # IMPORTANT: Must create DISTRIBUTED stripes across the macro width
+    # to match TinyTapeout top-level power grid integration requirements.
+    # Single power pins at one corner cause routing failures with:
+    #   "Error: via does not have shape on layer cut"
     if ENABLE_POWER_PINS:
-        for pin_name, use_type, x_pos in POWER_PINS:
-            # Add TopMetal1.drawing shape (required by DRC to enclose pin)
-            drawing_rect = gdstk.rectangle(
-                (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
-                (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
-                layer=POWER_DRAWING_LAYER,
-                datatype=POWER_DRAWING_DATATYPE
-            )
-            cell.add(drawing_rect)
-            
-            # Add TopMetal1.pin shape
-            power_rect = gdstk.rectangle(
-                (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
-                (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
-                layer=POWER_PIN_LAYER,
-                datatype=POWER_PIN_DATATYPE
-            )
-            cell.add(power_rect)
-            
-            label = gdstk.Label(
-                pin_name,
-                (x_pos, (POWER_PIN_Y_START + POWER_PIN_Y_END) / 2),
-                layer=POWER_LABEL_LAYER,
-                texttype=POWER_LABEL_DATATYPE
-            )
-            cell.add(label)
+        for pin_name, use_type, x_positions, y_start, y_end in POWER_PINS_DISTRIBUTED:
+            for i, llx in enumerate(x_positions):
+                # x_positions are LEFT EDGE values (llx), not centers
+                urx = llx + POWER_PIN_WIDTH
+                
+                # Add TopMetal1.drawing shape (required by DRC to enclose pin)
+                drawing_rect = gdstk.rectangle(
+                    (llx, y_start),
+                    (urx, y_end),
+                    layer=POWER_DRAWING_LAYER,
+                    datatype=POWER_DRAWING_DATATYPE
+                )
+                cell.add(drawing_rect)
+                
+                # Add TopMetal1.pin shape
+                power_rect = gdstk.rectangle(
+                    (llx, y_start),
+                    (urx, y_end),
+                    layer=POWER_PIN_LAYER,
+                    datatype=POWER_PIN_DATATYPE
+                )
+                cell.add(power_rect)
+                
+                # Add label only on first stripe (avoid clutter)
+                if i == 0:
+                    label = gdstk.Label(
+                        pin_name,
+                        (llx + POWER_PIN_WIDTH/2, (y_start + y_end) / 2),
+                        layer=POWER_LABEL_LAYER,
+                        texttype=POWER_LABEL_DATATYPE
+                    )
+                    cell.add(label)
+        
+        print(f"Power pins: {len(VPWR_X_POSITIONS)} VPWR stripes + {len(VGND_X_POSITIONS)} VGND stripes (distributed)")
     else:
         print("Power pins: DISABLED (wrapper provides power grid)")
     
@@ -528,23 +543,30 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         
         print(f"\nConnecting {len(output_pins_sorted)} output pins to ground...")
         
-        # Find VGND power pin position
-        vgnd_x = None
-        for pin_name, use_type, x_pos in POWER_PINS:
+        # Find VGND power pin position (use first stripe from distributed positions)
+        # VGND_X_POSITIONS contains LEFT EDGE (llx) values
+        vgnd_llx = VGND_X_POSITIONS[0] if VGND_X_POSITIONS else None
+        vgnd_x = vgnd_llx + POWER_PIN_WIDTH/2 if vgnd_llx else None  # Center of stripe
+        
+        # Get Y range for VGND from distributed config
+        vgnd_y_start = POWER_PIN_Y_START
+        vgnd_y_end = POWER_PIN_Y_END
+        for pin_name, use_type, x_positions, y_start, y_end in POWER_PINS_DISTRIBUTED:
             if pin_name == "VGND":
-                vgnd_x = x_pos
+                vgnd_y_start = y_start
+                vgnd_y_end = y_end
                 break
         
-        if vgnd_x is None:
+        if vgnd_llx is None:
             print("  WARNING: VGND power pin not found, skipping ground bus")
         else:
             # Calculate ground bus extent
             leftmost_output_x = output_pins_sorted[0][2]
             rightmost_output_x = output_pins_sorted[-1][2]
             
-            # VGND pin boundaries
-            vgnd_left = vgnd_x - POWER_PIN_WIDTH/2
-            vgnd_right = vgnd_x + POWER_PIN_WIDTH/2
+            # VGND pin boundaries (vgnd_llx is the left edge)
+            vgnd_left = vgnd_llx
+            vgnd_right = vgnd_llx + POWER_PIN_WIDTH
             
             # Place via within VGND's X footprint to connect directly
             # Via must be inside VGND bounds with proper enclosure
@@ -629,8 +651,8 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
                 
                 # 5. TopMetal1 connection - extends from VGND to cover TopVia1
                 via_enclosure_tm1 = 0.5
-                tm1_y_start = max(POWER_PIN_Y_START, via_y - TOPVIA1_SIZE/2 - via_enclosure_tm1)
-                tm1_y_end = min(POWER_PIN_Y_END, via_y + TOPVIA1_SIZE/2 + via_enclosure_tm1)
+                tm1_y_start = max(vgnd_y_start, via_y - TOPVIA1_SIZE/2 - via_enclosure_tm1)
+                tm1_y_end = min(vgnd_y_end, via_y + TOPVIA1_SIZE/2 + via_enclosure_tm1)
                 
                 topmetal_rect = gdstk.rectangle(
                     (vgnd_left, tm1_y_start),
@@ -946,7 +968,12 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
 
 
 def generate_lef():
-    """Generate LEF file using IHP specifications."""
+    """
+    Generate LEF file using IHP specifications.
+    
+    IMPORTANT: Power pins must have MULTIPLE PORT entries distributed across 
+    the macro to match TinyTapeout top-level power grid integration requirements.
+    """
     lef = f"""VERSION 5.8 ;
 BUSBITCHARS "[]" ;
 DIVIDERCHAR "/" ;
@@ -959,19 +986,26 @@ MACRO {TOP_MODULE}
   SYMMETRY X Y ;
 """
     
-    # Power pins on TopMetal1 (only if enabled - wrapper may provide them)
+    # Power pins on TopMetal1 - MUST have multiple PORT entries distributed across macro
+    # This is required for TinyTapeout top-level integration to connect power grid
     if ENABLE_POWER_PINS:
-        for pin_name, use_type, x_pos in POWER_PINS:
-            llx = x_pos - POWER_PIN_WIDTH/2
-            urx = x_pos + POWER_PIN_WIDTH/2
+        for pin_name, use_type, x_positions, y_start, y_end in POWER_PINS_DISTRIBUTED:
             lef += f"""
   PIN {pin_name}
     DIRECTION INOUT ;
-    USE {use_type} ;
+    USE {use_type} ;"""
+            
+            # Add a PORT entry for each stripe position
+            # x_positions are LEFT EDGE values (llx), not centers
+            for llx in x_positions:
+                urx = llx + POWER_PIN_WIDTH
+                lef += f"""
     PORT
       LAYER TopMetal1 ;
-        RECT {llx:.3f} {POWER_PIN_Y_START:.3f} {urx:.3f} {POWER_PIN_Y_END:.3f} ;
-    END
+        RECT {llx:.3f} {y_start:.3f} {urx:.3f} {y_end:.3f} ;
+    END"""
+            
+            lef += f"""
   END {pin_name}
 """
     
