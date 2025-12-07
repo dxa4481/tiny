@@ -1,0 +1,6 @@
+set circuit1 [readnet spice /home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/runs/RUN_2025-12-07_21-06-49/27-tt-ihp-extractspice/tt_ihp_wrapper.spice]
+set circuit2 [readnet verilog /dev/null]
+puts "Reading SPICE netlist file '/home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/spice/sg13g2_stdcell.spice'..."
+readnet spice /home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/IHP-Open-PDK/ihp-sg13g2/libs.ref/sg13g2_stdcell/spice/sg13g2_stdcell.spice $circuit2
+readnet verilog /home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/runs/RUN_2025-12-07_21-06-49/14-openroad-detailedrouting/tt_ihp_wrapper.pnl.v $circuit2
+lvs "$circuit1 tt_ihp_wrapper" "$circuit2 tt_ihp_wrapper" /nix/store/ara2l4shfgx008zbq6l63pzps2cgazvy-python3-3.12.10-env/lib/python3.12/site-packages/librelane/scripts/netgen/setup.tcl /home/runner/work/tinytapeout-ihp-26a/tinytapeout-ihp-26a/tt-multiplexer/ol2/tt_top/runs/RUN_2025-12-07_21-06-49/28-netgen-lvs/reports/lvs.netgen.rpt -blackbox -json

@@ -1,0 +1,13 @@
+
+===========================================================================
+Clock Skew (Hold)
+============================================================================
+======================= nom_typ_1p20V_25C Corner ===================================
+
+Clock ctrl_inc
+1.649194 source latency top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK ^
+-1.651634 target latency top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK ^
+-0.002440 CRPR
+--------------
+-0.004881 hold skew
+

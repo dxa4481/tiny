@@ -1,0 +1,51 @@
+Clock: ctrl_inc
+Sources: pad_raw[1] 
+Generated: no
+Virtual: yes
+Propagated: no
+Period: 10.000000
+
+===========================================================================
+report_clock_properties
+============================================================================
+Clock                   Period          Waveform
+----------------------------------------------------
+ctrl_inc             10.000000    0.000000  5.000000
+
+===========================================================================
+report_clock_latency
+============================================================================
+Clock ctrl_inc
+rise -> rise
+    min     max
+0.000000 0.000000 source latency
+1.717035         network latency top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK
+        1.970723 network latency top_I.ctrl_I/sel_cnt_gen[1].cnt_bit_I.cell0_I/CLK
+---------------
+1.717035 1.970723 latency
+        0.253688 skew
+
+rise -> fall
+    min     max
+0.000000 0.000000 source latency
+1.993638         network latency top_I.ctrl_I/sel_cnt_gen[1].cnt_bit_I.cell0_I/CLK
+        1.997448 network latency top_I.ctrl_I/sel_cnt_gen[1].cnt_bit_I.cell0_I/CLK
+---------------
+1.993638 1.997448 latency
+        0.003810 skew
+
+fall -> fall
+    min     max
+0.000000 0.000000 source latency
+1.712521         network latency top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK
+        1.715869 network latency top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK
+---------------
+1.712521 1.715869 latency
+        0.003348 skew
+
+
+
+===========================================================================
+report_clock_min_period
+============================================================================
+ctrl_inc period_min = 0.48 fmax = 2104.32

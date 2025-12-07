@@ -1,0 +1,53 @@
+
+===========================================================================
+report_checks -path_delay min (Hold)
+============================================================================
+======================= nom_typ_1p20V_25C Corner ===================================
+
+Startpoint: top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I
+            (rising edge-triggered flip-flop clocked by ctrl_inc)
+Endpoint: top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I
+          (rising edge-triggered flip-flop clocked by ctrl_inc)
+Path Group: ctrl_inc
+Path Type: min
+
+Fanout         Cap        Slew       Delay        Time   Description
+---------------------------------------------------------------------------------------------
+                                  0.000000    0.000000   clock ctrl_inc (rise edge)
+                                  0.000000    0.000000   clock source latency
+     2    0.042000    0.057510    0.034166    0.034166 ^ pad_raw[1] (inout)
+                                                         pad_raw[1] (net)
+                      0.057510    0.000000    0.034166 ^ gpio[1].gpio_I.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.pad_I/pad (sg13g2_IOPadIn)
+     2    0.557076    0.200000    1.000000    1.034166 ^ gpio[1].gpio_I.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.pad_I/p2c (sg13g2_IOPadIn)
+                                                         gpio[1].gpio_I.pad_in (net)
+                      0.200000    0.485568    1.519734 ^ top_I.ctrl_I/ctrl_ibuf_I[1].genblk1.cell0_I/A (sg13g2_buf_2)
+     1    0.004496    0.029888    0.129157    1.648890 ^ top_I.ctrl_I/ctrl_ibuf_I[1].genblk1.cell0_I/X (sg13g2_buf_2)
+                                                         top_I.ctrl_I/ctrl_ibuf_I[1].z (net)
+                      0.029889    0.000303    1.649194 ^ top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK (sg13g2_dfrbp_2)
+     2    0.007354    0.044981    0.177616    1.826810 v top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/Q_N (sg13g2_dfrbp_2)
+                                                         top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.d (net)
+                      0.044981    0.000416    1.827226 v top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/D (sg13g2_dfrbp_2)
+                                              1.827226   data arrival time
+
+                                  0.000000    0.000000   clock ctrl_inc (rise edge)
+                                  0.000000    0.000000   clock source latency
+     2    0.045000    0.060377    0.036606    0.036606 ^ pad_raw[1] (inout)
+                                                         pad_raw[1] (net)
+                      0.060377    0.000000    0.036606 ^ gpio[1].gpio_I.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.pad_I/pad (sg13g2_IOPadIn)
+     2    0.557076    0.200000    1.000000    1.036606 ^ gpio[1].gpio_I.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.pad_I/p2c (sg13g2_IOPadIn)
+                                                         gpio[1].gpio_I.pad_in (net)
+                      0.200000    0.485568    1.522174 ^ top_I.ctrl_I/ctrl_ibuf_I[1].genblk1.cell0_I/A (sg13g2_buf_2)
+     1    0.004496    0.029888    0.129157    1.651331 ^ top_I.ctrl_I/ctrl_ibuf_I[1].genblk1.cell0_I/X (sg13g2_buf_2)
+                                                         top_I.ctrl_I/ctrl_ibuf_I[1].z (net)
+                      0.029889    0.000303    1.651634 ^ top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK (sg13g2_dfrbp_2)
+                                 -0.002440    1.649194   clock reconvergence pessimism
+                                 -0.037979    1.611215   library hold time
+                                              1.611215   data required time
+---------------------------------------------------------------------------------------------
+                                              1.611215   data required time
+                                             -1.827226   data arrival time
+---------------------------------------------------------------------------------------------
+                                              0.216011   slack (MET)
+
+
+

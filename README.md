@@ -395,6 +395,73 @@ This limits options to:
 - Large text with thick (>2µm) strokes ✅
 - Fine detailed text ❌ (violates DRC)
 
+## Troubleshooting: LVS Pin Name Errors
+
+### The Error
+```
+librelane.flows.flow.FlowError: One or more deferred errors were encountered:
+52 LVS errors found.
+```
+
+With warnings in the extraction log:
+```
+[!] Pin without name ignored !
+[!] Pin without name ignored !
+... (repeated 45 times)
+```
+
+And in the LVS report, pins appear with `proxy` prefix:
+```
+proxyuo_out[0]     |uo_out[0]
+proxyVPWR          |VPWR
+proxyVGND          |VGND
+```
+
+### Root Cause
+
+**Pin labels are on the wrong GDS layer!** The SPICE extraction tool (used for LVS) only recognizes pin names on `.text` layers (datatype 25), NOT `.label` layers (datatype 1).
+
+| Layer | Datatype 1 (.label) | Datatype 25 (.text) |
+|-------|---------------------|---------------------|
+| Metal4 (50) | ❌ Not recognized | ✅ Used for signal pin names |
+| TopMetal1 (126) | ❌ Not recognized | ✅ Used for power pin names |
+
+When pin labels are on datatype 1, the extraction tool finds the pin shapes but can't find their names, causing:
+1. "Pin without name ignored" warnings
+2. All macro pins become undefined in the SPICE netlist
+3. LVS creates dummy `proxy*` net names for wires to the missing pins
+4. 52 LVS errors due to pin mismatches
+
+### The Fix (Dec 2024)
+
+**Changed label datatype from 1 to 25 in GDS generation:**
+
+```python
+# WRONG - extraction tool ignores these
+LABEL_DATATYPE = 1          # .label datatype (not recognized!)
+POWER_LABEL_DATATYPE = 1    # .label datatype (not recognized!)
+
+# CORRECT - extraction tool finds pin names
+LABEL_DATATYPE = 25         # .text datatype ✅
+POWER_LABEL_DATATYPE = 25   # .text datatype ✅
+```
+
+### How to Verify Your Pin Labels
+
+```python
+import gdstk
+lib = gdstk.read_gds('your_design.gds')
+cell = lib.cells[0]
+for label in cell.labels:
+    print(f'{label.text} at layer {label.layer}/{label.texttype}')
+    
+# Should show:
+#   clk at layer 50/25 (Metal4.text) ✅
+#   VPWR at layer 126/25 (TopMetal1.text) ✅
+# NOT:
+#   clk at layer 50/1 (Metal4.label) ❌
+```
+
 ## License
 
 Apache 2.0 - See [LICENSE](LICENSE)

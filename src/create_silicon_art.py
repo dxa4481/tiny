@@ -84,13 +84,15 @@ TEXT_DATATYPE = 0     # .drawing datatype - TinyTapeout whitelisted, but DRC che
 BOUND_LAYER = 189     # prBoundary
 BOUND_DATATYPE = 4    # boundary datatype
 
-# Label layer for pin names (Metal4.label = 50/1)
+# Label layer for pin names - MUST use .text (datatype 25) NOT .label (datatype 1)!
+# The SPICE extraction tool only recognizes pin names on .text layers.
+# Using .label layers causes "Pin without name ignored" errors during LVS.
 LABEL_LAYER = 50      # Metal4
-LABEL_DATATYPE = 1    # label datatype
+LABEL_DATATYPE = 25   # text datatype (NOT 1 = label datatype!)
 
-# Power pin label layer (TopMetal1.label = 126/1)
+# Power pin label layer - MUST use .text (datatype 25) NOT .label (datatype 1)!
 POWER_LABEL_LAYER = 126    # TopMetal1
-POWER_LABEL_DATATYPE = 1   # label datatype
+POWER_LABEL_DATATYPE = 25  # text datatype (NOT 1 = label datatype!)
 
 # Via4 layer (via between Metal4 and Metal5)
 # Layer numbers from: IHP-Open-PDK/ihp-sg13g2/libs.tech/klayout/tech/sg13g2.lyp

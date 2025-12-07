@@ -1,0 +1,13 @@
+
+===========================================================================
+Clock Skew (Setup)
+============================================================================
+======================= nom_slow_1p08V_125C Corner ===================================
+
+Clock ctrl_inc
+1.720845 source latency top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK ^
+-1.717035 target latency top_I.ctrl_I/sel_cnt_gen[0].cnt_bit_I.cell0_I/CLK ^
+-0.003810 CRPR
+--------------
+0.000000 setup skew
+
