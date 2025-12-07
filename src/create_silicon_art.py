@@ -177,17 +177,50 @@ SIGNAL_PINS = [
     ("uo_out[7]", "OUTPUT", 91.20),
 ]
 
-# Power pins: width must be >= 1.64µm (TopMetal1 min width for IHP-SG13G2)
-# Must be within 10µm of top and bottom edges
-POWER_PIN_WIDTH = 1.8  # Above 1.64µm minimum
-POWER_PIN_Y_START = 5.0  # Within 10µm of bottom
-POWER_PIN_Y_END = DIE_HEIGHT_UM - 5.0  # Within 10µm of top
+# =============================================================================
+# Power Pin Configuration - MUST match TinyTapeout IHP integration requirements
+# =============================================================================
+# The top-level TinyTapeout integration expects power stripes distributed across
+# the macro width. Single power pins at one corner cause routing failures with:
+#   "Error: via does not have shape on layer cut"
+#
+# These positions are extracted from working OpenLane-generated designs like
+# tt_um_factory_test.lef, tt_um_urish_simon.lef, etc.
+#
+# IMPORTANT: The X positions below are the LEFT EDGE (llx) of each stripe,
+# NOT the center! This matches how OpenLane generates LEF files.
+# =============================================================================
 
-# Power pin X positions (must meet TopMetal1 min space = 1.64µm)
-# With width 1.8µm, pins at x=5.0 and x=8.5 give spacing of 1.7µm (>1.64µm)
+# Power stripe dimensions (from working designs)
+# Width = urx - llx = 23.780 - 21.580 = 2.200 µm
+POWER_PIN_WIDTH = 2.2  # Width of each power stripe
+POWER_PIN_Y_START_VGND = 3.15   # VGND Y start
+POWER_PIN_Y_END_VGND = 151.42   # VGND Y end
+POWER_PIN_Y_START_VPWR = 3.56   # VPWR Y start  
+POWER_PIN_Y_END_VPWR = 151.83   # VPWR Y end
+
+# Legacy single-position variables (kept for backward compatibility)
+POWER_PIN_Y_START = 3.15
+POWER_PIN_Y_END = 151.83
+
+# Distributed power stripe X positions (LEFT EDGE of each stripe)
+# These are the exact llx values from tt_um_factory_test.lef
+# VPWR: RECT 15.380 3.560 17.580 151.830 → llx=15.380
+# VGND: RECT 21.580 3.150 23.780 151.420 → llx=21.580
+VPWR_X_POSITIONS = [15.38, 54.25, 93.12, 131.99, 170.86]  # llx values
+VGND_X_POSITIONS = [21.58, 60.45, 99.32, 138.19, 177.06]  # llx values
+
+# Power pins list - now contains multiple positions per net
+# Format: (name, use_type, [list of x LEFT EDGE positions], y_start, y_end)
+POWER_PINS_DISTRIBUTED = [
+    ("VGND", "GROUND", VGND_X_POSITIONS, POWER_PIN_Y_START_VGND, POWER_PIN_Y_END_VGND),
+    ("VPWR", "POWER", VPWR_X_POSITIONS, POWER_PIN_Y_START_VPWR, POWER_PIN_Y_END_VPWR),
+]
+
+# Legacy format for backward compatibility (uses first position only)
 POWER_PINS = [
-    ("VGND", "GROUND", 5.0),
-    ("VPWR", "POWER", 8.5),  # Moved from 8.0 to 8.5 to meet min space rule
+    ("VGND", "GROUND", VGND_X_POSITIONS[0]),
+    ("VPWR", "POWER", VPWR_X_POSITIONS[0]),
 ]
 
 
@@ -247,23 +280,32 @@ def create_silicon_art_gds(text="HELLO\nWORLD", output_dir="gds", font_size=None
     
     # -------------------------------------------------------------------------
     # 3. Add power pins on TopMetal1 layer (required by TinyTapeout precheck)
+    # IMPORTANT: Must create DISTRIBUTED stripes across the macro width
+    # to match TinyTapeout top-level power grid integration requirements
     # -------------------------------------------------------------------------
-    for pin_name, use_type, x_pos in POWER_PINS:
-        power_rect = gdstk.rectangle(
-            (x_pos - POWER_PIN_WIDTH/2, POWER_PIN_Y_START),
-            (x_pos + POWER_PIN_WIDTH/2, POWER_PIN_Y_END),
-            layer=POWER_PIN_LAYER,
-            datatype=POWER_PIN_DATATYPE
-        )
-        cell.add(power_rect)
-        
-        label = gdstk.Label(
-            pin_name,
-            (x_pos, (POWER_PIN_Y_START + POWER_PIN_Y_END) / 2),
-            layer=POWER_LABEL_LAYER,
-            texttype=POWER_LABEL_DATATYPE
-        )
-        cell.add(label)
+    for pin_name, use_type, x_positions, y_start, y_end in POWER_PINS_DISTRIBUTED:
+        for i, llx in enumerate(x_positions):
+            # x_positions are LEFT EDGE values (llx), not centers
+            urx = llx + POWER_PIN_WIDTH
+            
+            # Create power stripe rectangle
+            power_rect = gdstk.rectangle(
+                (llx, y_start),
+                (urx, y_end),
+                layer=POWER_PIN_LAYER,
+                datatype=POWER_PIN_DATATYPE
+            )
+            cell.add(power_rect)
+            
+            # Add label only on first stripe (avoid clutter)
+            if i == 0:
+                label = gdstk.Label(
+                    pin_name,
+                    (llx + POWER_PIN_WIDTH/2, (y_start + y_end) / 2),
+                    layer=POWER_LABEL_LAYER,
+                    texttype=POWER_LABEL_DATATYPE
+                )
+                cell.add(label)
     
     # -------------------------------------------------------------------------
     # 4. Text art DISABLED to avoid DRC violations
@@ -322,6 +364,8 @@ def generate_lef():
     - Pin positions must match template DEF exactly
     - Layer name must be "Metal4" (capital M) for IHP PDK
     - All coordinates must have decimal points (e.g., 0.000 not 0)
+    - Power pins must have MULTIPLE PORT entries distributed across the macro
+      to match TinyTapeout integration requirements
     """
     lef = f"""VERSION 5.8 ;
 BUSBITCHARS "[]" ;
@@ -335,18 +379,25 @@ MACRO {TOP_MODULE}
   SYMMETRY X Y ;
 """
     
-    # Power pins - must use "TopMetal1" for IHP (required by precheck)
-    for pin_name, use_type, x_pos in POWER_PINS:
-        llx = x_pos - POWER_PIN_WIDTH/2
-        urx = x_pos + POWER_PIN_WIDTH/2
+    # Power pins - MUST have multiple PORT entries distributed across macro
+    # This is required for TinyTapeout top-level integration to connect power grid
+    for pin_name, use_type, x_positions, y_start, y_end in POWER_PINS_DISTRIBUTED:
         lef += f"""
   PIN {pin_name}
     DIRECTION INOUT ;
-    USE {use_type} ;
+    USE {use_type} ;"""
+        
+        # Add a PORT entry for each stripe position
+        # x_positions are LEFT EDGE values (llx), not centers
+        for llx in x_positions:
+            urx = llx + POWER_PIN_WIDTH
+            lef += f"""
     PORT
       LAYER TopMetal1 ;
-        RECT {llx:.3f} {POWER_PIN_Y_START:.3f} {urx:.3f} {POWER_PIN_Y_END:.3f} ;
-    END
+        RECT {llx:.3f} {y_start:.3f} {urx:.3f} {y_end:.3f} ;
+    END"""
+        
+        lef += f"""
   END {pin_name}
 """
     
