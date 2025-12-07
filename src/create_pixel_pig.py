@@ -37,6 +37,7 @@ from create_silicon_art import (
     SIGNAL_PINS, POWER_PINS,
     POWER_PIN_WIDTH, POWER_PIN_Y_START, POWER_PIN_Y_END,
     GDS_UNIT, GDS_PRECISION,
+    TOPVIA1_LAYER, TOPVIA1_DATATYPE,  # Via between Metal4 and TopMetal1
 )
 
 # =============================================================================
@@ -123,6 +124,13 @@ ENABLE_TEXT = True  # Canary token text enabled
 ENABLE_BORDER = False  # Disable - border not needed
 ENABLE_PIG = True  # Pig art enabled - violations are not from the pig
 ENABLE_POWER_PINS = True  # Power pins REQUIRED by TinyTapeout pin check
+ENABLE_OUTPUT_GROUND = True  # Connect output pins to ground (VGND)
+
+# Ground bus parameters - connects output pins to VGND
+GROUND_BUS_Y = 150.0      # Y position of horizontal Metal4 bus (below pins at 154.48)
+GROUND_BUS_WIDTH = 1.0    # Width of Metal4 ground bus (above 0.20µm min)
+GROUND_TRACE_WIDTH = 0.5  # Width of vertical traces from pins to bus
+VIA_SIZE = 1.0            # TopVia1 size (must meet minimum enclosure rules)
 
 # =============================================================================
 # Pixel Font Definition (5x7 characters)
@@ -499,6 +507,90 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
             cell.add(label)
     else:
         print("Power pins: DISABLED (wrapper provides power grid)")
+    
+    # -------------------------------------------------------------------------
+    # 3b. Connect OUTPUT pins to ground (VGND) via Metal4 bus and TopVia1
+    # -------------------------------------------------------------------------
+    # The leftmost 24 pins are all OUTPUT pins that need to be tied to ground.
+    # We create a Metal4 ground bus below the pins, connect each output pin
+    # to the bus with vertical traces, then use TopVia1 to connect to TopMetal1
+    # which connects to the VGND power pin.
+    if ENABLE_OUTPUT_GROUND:
+        # Get output pins sorted by X position
+        output_pins = [(name, direction, x) for name, direction, x in SIGNAL_PINS 
+                       if direction == 'OUTPUT']
+        output_pins_sorted = sorted(output_pins, key=lambda p: p[2])
+        
+        print(f"\nConnecting {len(output_pins_sorted)} output pins to ground...")
+        
+        # Find VGND power pin position
+        vgnd_x = None
+        for pin_name, use_type, x_pos in POWER_PINS:
+            if pin_name == "VGND":
+                vgnd_x = x_pos
+                break
+        
+        if vgnd_x is None:
+            print("  WARNING: VGND power pin not found, skipping ground bus")
+        else:
+            # Calculate ground bus extent
+            leftmost_output_x = output_pins_sorted[0][2]
+            rightmost_output_x = output_pins_sorted[-1][2]
+            
+            # Extend bus from near VGND (left) to past the rightmost output pin
+            bus_x_start = vgnd_x + POWER_PIN_WIDTH/2 + 1.0  # 1µm clearance from VGND
+            bus_x_end = rightmost_output_x + PIN_WIDTH/2 + 0.5
+            
+            # Metal4 horizontal ground bus
+            ground_bus = gdstk.rectangle(
+                (bus_x_start, GROUND_BUS_Y - GROUND_BUS_WIDTH/2),
+                (bus_x_end, GROUND_BUS_Y + GROUND_BUS_WIDTH/2),
+                layer=PIN_DRAWING_LAYER,  # Metal4.drawing
+                datatype=PIN_DRAWING_DATATYPE
+            )
+            cell.add(ground_bus)
+            print(f"  Metal4 ground bus: x={bus_x_start:.1f} to {bus_x_end:.1f}, y={GROUND_BUS_Y:.1f}")
+            
+            # Connect each output pin to the ground bus with vertical Metal4 traces
+            for pin_name, direction, x_pos in output_pins_sorted:
+                # Vertical trace from pin bottom to ground bus top
+                pin_bottom_y = PIN_Y_CENTER - PIN_HEIGHT/2
+                trace = gdstk.rectangle(
+                    (x_pos - GROUND_TRACE_WIDTH/2, GROUND_BUS_Y + GROUND_BUS_WIDTH/2),
+                    (x_pos + GROUND_TRACE_WIDTH/2, pin_bottom_y),
+                    layer=PIN_DRAWING_LAYER,  # Metal4.drawing
+                    datatype=PIN_DRAWING_DATATYPE
+                )
+                cell.add(trace)
+            print(f"  Added {len(output_pins_sorted)} vertical traces to ground bus")
+            
+            # TopVia1 to connect Metal4 ground bus to TopMetal1
+            # Place via near the left end of the ground bus, close to VGND
+            via_x = bus_x_start + 1.0  # Slightly inset from bus start
+            via_y = GROUND_BUS_Y
+            
+            via_rect = gdstk.rectangle(
+                (via_x - VIA_SIZE/2, via_y - VIA_SIZE/2),
+                (via_x + VIA_SIZE/2, via_y + VIA_SIZE/2),
+                layer=TOPVIA1_LAYER,
+                datatype=TOPVIA1_DATATYPE
+            )
+            cell.add(via_rect)
+            print(f"  TopVia1 at ({via_x:.1f}, {via_y:.1f})")
+            
+            # TopMetal1 connection from via to VGND
+            # Draw a rectangle that covers the via and extends to connect with VGND
+            topmetal_rect = gdstk.rectangle(
+                (vgnd_x - POWER_PIN_WIDTH/2, via_y - VIA_SIZE/2 - 0.5),
+                (via_x + VIA_SIZE/2 + 0.5, via_y + VIA_SIZE/2 + 0.5),
+                layer=POWER_DRAWING_LAYER,  # TopMetal1.drawing
+                datatype=POWER_DRAWING_DATATYPE
+            )
+            cell.add(topmetal_rect)
+            print(f"  TopMetal1 connection from VGND to via")
+            print(f"  Ground connection complete!")
+    else:
+        print("Output ground bus: DISABLED")
     
     # -------------------------------------------------------------------------
     # 4. Calculate layout areas - pig centered in available area
@@ -983,11 +1075,20 @@ def main():
         print("  🐷 Pixel Pig (bottom) - on Metal.drawing layers")
         print("  📝 Canary Token (top) - pixel font on Metal1.drawing")
         print("  🔲 Border frame (4 rectangles) - on Metal1.drawing")
+        print("  ⚡ Ground bus connecting 24 output pins to VGND")
         print()
         print("Layer usage:")
         print("  🔵 Metal1.drawing (8/0)  = text + pig body + border + fill")
         print("  🟢 Metal2.drawing (10/0) = pig details + eyes + fill")
         print("  🔴 Metal3.drawing (30/0) = pig snout + key + fill")
+        print("  🟣 Metal4.drawing (50/0) = signal pins + ground bus")
+        print("  🟡 TopMetal1.drawing (126/0) = power pins + ground")
+        print("  🔗 TopVia1 (125/0) = via connecting Metal4 to TopMetal1")
+        print()
+        print("Output pin grounding:")
+        print("  ✅ 24 output pins connected to Metal4 ground bus")
+        print("  ✅ Ground bus connected to VGND via TopVia1")
+        print("  ✅ 19 input pins left floating (as required)")
         print()
         print("DRC fixes applied:")
         print("  ✅ Text uses pixel font (simple rectangles, not gdstk.text)")

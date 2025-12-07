@@ -92,6 +92,11 @@ LABEL_DATATYPE = 1    # label datatype
 POWER_LABEL_LAYER = 126    # TopMetal1
 POWER_LABEL_DATATYPE = 1   # label datatype
 
+# TopVia1 layer (via between Metal4 and TopMetal1)
+# Layer numbers from: IHP-Open-PDK/ihp-sg13g2/libs.tech/klayout/tech/sg13g2.lyp
+TOPVIA1_LAYER = 125        # TopVia1
+TOPVIA1_DATATYPE = 0       # drawing datatype
+
 # GDS database units - MUST be exact to avoid floating-point precision issues
 # that cause "Layout dbu deviates from rule file dbu" warnings
 GDS_UNIT = 1e-6       # 1 unit = 1 micrometer
