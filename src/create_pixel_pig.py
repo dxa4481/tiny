@@ -770,7 +770,13 @@ def create_combined_gds(text, output_dir="gds", font_size=None, pig_scale=0.4):
         # Text area: above the pig (with proper margins to stay within die)
         text_area_x = margin_left + 2.0
         text_area_y = pig_offset_y + pig_height + 3.0
-        text_area_width = DIE_WIDTH_UM - margin_left - margin_right - 4.0  # Stay within die
+        # Constrain text width to avoid overlapping with rightmost power stripes
+        # Power stripes are at x=170.86 (VPWR) and x=177.06 (VGND)
+        # Text starts at x=14.0, so max width to avoid stripes = 170.86 - 14.0 - 2.0 (margin)
+        text_area_width = min(
+            DIE_WIDTH_UM - margin_left - margin_right - 4.0,  # Original: stay within die
+            154.0  # Avoid power stripes at x≈170-179
+        )
         text_area_height = DIE_HEIGHT_UM - margin_top - text_area_y - 2.0
         
         # Calculate optimal pixel size to fit the text
@@ -1137,7 +1143,7 @@ def main():
         description='Create combined Pixel Pig + Canary Token GDS'
     )
     parser.add_argument('--text', '-t', 
-        default='[default]\naws_access_key_id =\n     AKIAX24QKKOLLIHNWPFY\naws_secret_access_key =\n     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\n\n\nDon\'t Forget To Run TruffleHog!',
+        default='[default]\naws_access_key_id =\n     AKIAX24QKKOLLIHNWPFY\naws_secret_access_key =\n     n6KkGJ8wrUpVUd6ZH8rw7DivKurwuxRX\\\n     uFrzrSpi\n\n\nDon\'t Forget To Run TruffleHog!',
         help='Canary token text')
     parser.add_argument('--output', '-o', default='gds',
                        help='Output directory')
