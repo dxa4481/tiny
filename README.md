@@ -183,6 +183,40 @@ The metal layers appear as:
 - Different metal layers have slightly different colors
 - Text will be approximately 5-20 µm tall depending on settings
 
+### Fill Blockage for Better Visibility
+
+By default, the TinyTapeout flow adds **metal fill** to meet density requirements. This fill can obscure your art when viewing under a microscope.
+
+**Solution: Use `.nofill` layers to block fill above your art!**
+
+```bash
+# Generate GDS with fill blockage (default - blocks Metal4/5/TopMetal1)
+python create_pixel_pig.py --output gds
+
+# Block fill on ALL metal layers (including Metal1-3)
+python create_pixel_pig.py --block-all-metals --output gds
+
+# Disable fill blockage (if precheck rejects nofill layers)
+python create_pixel_pig.py --no-fill-blockage --output gds
+```
+
+**How it works:**
+- The IHP-SG13G2 PDK has `.nofill` layers (datatype 22) for each metal layer
+- Adding shapes to these layers tells OpenLane's fill insertion to skip those regions
+- The art is on Metal1-3, so we block fill on Metal4, Metal5, and TopMetal1 above it
+
+**Important caveats:**
+1. Fill blockage shapes must NOT overlap with power rails (automated in the script)
+2. The `.nofill` layers (e.g., Metal4.nofill = 50/22) may not be in TinyTapeout's precheck whitelist
+3. If precheck fails with "Invalid layers in GDS", contact TinyTapeout or use `--no-fill-blockage`
+
+| Layer | Nofill Layer | GDS |
+|-------|-------------|-----|
+| Metal1 | Metal1.nofill | 8/22 |
+| Metal4 | Metal4.nofill | 50/22 |
+| Metal5 | Metal5.nofill | 67/22 |
+| TopMetal1 | TopMetal1.nofill | 126/22 |
+
 ## Putting a Book on a Chip
 
 Yes, you can put actual book content on silicon! Here's how:
